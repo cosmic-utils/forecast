@@ -23,6 +23,8 @@ pub fn key_binds() -> HashMap<KeyBind, Action> {
     bind!([Ctrl], Key::Character("a".into()), AddCity);
     bind!([Ctrl], Key::Character("r".into()), RemoveCity);
     bind!([Ctrl], Key::Character("q".into()), Quit);
+    bind!([Ctrl], Key::Character("i".into()), About);
+    bind!([Ctrl], Key::Character(",".into()), Settings);
     
     key_binds
 }

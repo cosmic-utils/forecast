@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+log = "0.4.21"
+open = "5.1.2"
 
 [dependencies.libcosmic]
 git = "https://github.com/pop-os/libcosmic"

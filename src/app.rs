@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 use cosmic::app::{Command, Core};
-use cosmic::iced::{Length, window};
+use cosmic::iced::{Alignment, Length, window};
 use cosmic::widget::{column, container, scrollable};
 use cosmic::widget::menu::key_bind::KeyBind;
-use cosmic::{executor, ApplicationExt, Apply, Element};
+use cosmic::{executor, cosmic_theme, theme, widget, ApplicationExt, Apply, Element};
 use cosmic::widget::menu::action::MenuAction;
 use cosmic::widget::segmented_button::Entity;
 
@@ -15,10 +15,29 @@ pub enum Message {
     AddCity,
     RemoveCity,
     Quit,
+    ToggleContextPage(ContextPage),
+    LaunchUrl(String),
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum ContextPage {
+    About,
+    Settings
+}
+
+impl ContextPage {
+    fn title(&self) -> String {
+        match self {
+            Self::About => "About".to_string(),
+            Self::Settings => "Settings".to_string(),
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Action {
+    About,
+    Settings,
     AddCity,
     RemoveCity,
     Quit,
@@ -29,6 +48,8 @@ impl MenuAction for Action {
     
     fn message(&self, _entity_op: Option<Entity>) -> Self::Message {
         match self {
+            Action::About => Message::ToggleContextPage(ContextPage::About),
+            Action::Settings => Message::ToggleContextPage(ContextPage::Settings),
             Action::AddCity => Message::AddCity,
             Action::RemoveCity => Message::RemoveCity,
             Action::Quit => Message::Quit,
@@ -39,6 +60,7 @@ impl MenuAction for Action {
 pub struct App {
     core: Core,
     key_binds: HashMap<KeyBind, Action>,
+    context_page: ContextPage,
 }
 
 impl cosmic::Application for App {
@@ -60,10 +82,22 @@ impl cosmic::Application for App {
         let mut app = App {
             core,
             key_binds: key_binds(),
+            context_page: ContextPage::Settings,
         };
         let command = app.update_title();
         
         (app, command)
+    }
+    
+    fn context_drawer(&self) -> Option<Element<Message>> {
+        if !self.core.window.show_context {
+            return None;
+        }
+        
+        Some(match self.context_page {
+            ContextPage::About => self.about(),
+            ContextPage::Settings => self.settings(),
+        })
     }
     
     fn header_start(&self) -> Vec<Element<Self::Message>> {
@@ -80,6 +114,21 @@ impl cosmic::Application for App {
             }
             Message::Quit => {
                 return window::close(window::Id::MAIN);
+            }
+            Message::ToggleContextPage(context_page) => {
+                if self.context_page == context_page {
+                    self.core.window.show_context = !self.core.window.show_context;
+                } else {
+                    self.context_page = context_page.clone();
+                    self.core.window.show_context = true;
+                }
+                self.set_context_title(context_page.clone().title());
+            }
+            Message::LaunchUrl(url) => match open::that_detached(&url) {
+                Ok(()) => {}
+                Err(err) => {
+                    log::warn!("failed to open {:?}: {}", url, err);
+                }
             }
         }
     
@@ -109,5 +158,34 @@ impl App where Self: cosmic::Application, {
         
         self.set_header_title(window_title.clone());
         self.set_window_title(window_title, cosmic::iced::window::Id::MAIN)
+    }
+    
+    fn about(&self) -> Element<Message> {
+        let cosmic_theme::Spacing { space_xxs, .. } = theme::active().cosmic().spacing;
+        let repo = "https://github.com/jwestall/cosmic-weather";
+        
+        widget::column::with_children(vec![
+            widget::text::title3("COSMIC Weather").into(),
+            widget::button::link(repo)
+                .on_press(Message::LaunchUrl(repo.to_string()))
+                .padding(0)
+                .into()
+        ])
+        .align_items(Alignment::Center)
+        .spacing(space_xxs)
+        .width(Length::Fill)
+        .into()
+    }
+    
+    fn settings(&self) -> Element<Message> {
+        let cosmic_theme::Spacing { space_xxs, .. } = theme::active().cosmic().spacing;
+        
+        widget::column::with_children(vec![
+            widget::text::title3("Settings").into(),
+        ])
+        .align_items(Alignment::Center)
+        .spacing(space_xxs)
+        .width(Length::Fill)
+        .into()
     }
 }
