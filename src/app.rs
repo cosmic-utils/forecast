@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use cosmic::app::{Command, Core};
-use cosmic::iced::{Alignment, Length, window};
+use cosmic::iced::{event, keyboard::Event as KeyEvent, Alignment, Length, Subscription, window, Event};
+use cosmic::iced::keyboard::{Key, Modifiers};
 use cosmic::widget::{column, container, scrollable};
 use cosmic::widget::menu::key_bind::KeyBind;
 use cosmic::{executor, cosmic_theme, theme, widget, ApplicationExt, Apply, Element};
@@ -17,6 +18,8 @@ pub enum Message {
     Quit,
     ToggleContextPage(ContextPage),
     LaunchUrl(String),
+    Key(Modifiers, Key),
+    Modifiers(Modifiers),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -60,6 +63,7 @@ impl MenuAction for Action {
 pub struct App {
     core: Core,
     key_binds: HashMap<KeyBind, Action>,
+    modifiers: Modifiers,
     context_page: ContextPage,
 }
 
@@ -82,6 +86,7 @@ impl cosmic::Application for App {
         let mut app = App {
             core,
             key_binds: key_binds(),
+            modifiers: Modifiers::empty(),
             context_page: ContextPage::Settings,
         };
         let command = app.update_title();
@@ -102,6 +107,23 @@ impl cosmic::Application for App {
     
     fn header_start(&self) -> Vec<Element<Self::Message>> {
         vec![menu::menu_bar(&self.key_binds)]
+    }
+    
+    fn subscription(&self) -> Subscription<Self::Message> {
+        let mut subscriptions = vec![
+            event::listen_with(|event, status| match event {
+                Event::Keyboard(KeyEvent::KeyPressed { key, modifiers, .. }) => match status {
+                    event::Status::Ignored => Some(Message::Key(modifiers, key)),
+                    event::Status::Captured => None,
+                },
+                Event::Keyboard(KeyEvent::ModifiersChanged(modifiers)) => {
+                    Some(Message::Modifiers(modifiers))
+                }
+                _ => None,
+            }),
+        ];
+        
+        Subscription::batch(subscriptions)
     }
     
     fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
@@ -129,6 +151,16 @@ impl cosmic::Application for App {
                 Err(err) => {
                     log::warn!("failed to open {:?}: {}", url, err);
                 }
+            }
+            Message::Key(modifiers, key) => {
+                for (key_bind, action) in self.key_binds.iter() {
+                    if key_bind.matches(modifiers, &key) {
+                        return self.update(action.message(None));
+                    }
+                }
+            }
+            Message::Modifiers(modifiers) => {
+                self.modifiers = modifiers;
             }
         }
     
