@@ -1,10 +1,12 @@
 use std::collections::HashMap;
-use cosmic::app::{Command, Core};
-use cosmic::iced::{event, keyboard::Event as KeyEvent, Alignment, Length, Subscription, window, Event};
+use cosmic::{
+    executor, cosmic_theme, theme, widget, ApplicationExt, Apply, Element,
+    app::{Command, Core},
+    iced::{event, keyboard::Event as KeyEvent, Alignment, Length, Subscription, window, Event},
+    widget::{column, container, scrollable, segmented_button},
+};
 use cosmic::iced::keyboard::{Key, Modifiers};
-use cosmic::widget::{column, container, scrollable};
 use cosmic::widget::menu::key_bind::KeyBind;
-use cosmic::{executor, cosmic_theme, theme, widget, ApplicationExt, Apply, Element};
 use cosmic::widget::menu::action::MenuAction;
 use cosmic::widget::segmented_button::Entity;
 
@@ -62,6 +64,7 @@ impl MenuAction for Action {
 
 pub struct App {
     core: Core,
+    nav_model: segmented_button::SingleSelectModel,
     key_binds: HashMap<KeyBind, Action>,
     modifiers: Modifiers,
     context_page: ContextPage,
@@ -83,15 +86,26 @@ impl cosmic::Application for App {
     }
     
     fn init(core: Core, _input: Self::Flags) -> (Self, Command<Self::Message>) {
+        let nav_model = segmented_button::ModelBuilder::default();
+        
         let mut app = App {
             core,
+            nav_model: nav_model.build(),
             key_binds: key_binds(),
             modifiers: Modifiers::empty(),
             context_page: ContextPage::Settings,
         };
+        
+        // Do not open nav bar by default
+        app.core.nav_bar_set_toggled(false);
+        
         let command = app.update_title();
         
         (app, command)
+    }
+    
+    fn nav_model(&self) -> Option<&segmented_button::SingleSelectModel> {
+        Some(&self.nav_model)
     }
     
     fn context_drawer(&self) -> Option<Element<Message>> {
