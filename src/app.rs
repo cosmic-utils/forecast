@@ -3,7 +3,7 @@ use cosmic::{
     executor, cosmic_theme, theme, widget, ApplicationExt, Apply, Element,
     app::{Command, Core},
     iced::{event, keyboard::Event as KeyEvent, Alignment, Length, Subscription, window, Event},
-    widget::{column, container, scrollable, segmented_button},
+    widget::{column, container, nav_bar, scrollable, segmented_button},
 };
 use cosmic::iced::keyboard::{Key, Modifiers};
 use cosmic::widget::menu::key_bind::KeyBind;
@@ -62,9 +62,34 @@ impl MenuAction for Action {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum NavPage {
+    HourlyView,
+    DailyView,
+    Details,
+}
+
+impl NavPage {
+    fn all() -> &'static [Self] {
+        &[
+            Self::HourlyView,
+            Self::DailyView,
+            Self::Details,
+        ]
+    }
+    
+    fn title(&self) -> String {
+        match self {
+            Self::HourlyView => "Hourly View".to_owned(),
+            Self::DailyView => "Daily View".to_owned(),
+            Self::Details => "Details".to_owned(),
+        }
+    }
+}
+
 pub struct App {
     core: Core,
-    nav_model: segmented_button::SingleSelectModel,
+    nav_model: nav_bar::Model,
     key_binds: HashMap<KeyBind, Action>,
     modifiers: Modifiers,
     context_page: ContextPage,
@@ -86,11 +111,21 @@ impl cosmic::Application for App {
     }
     
     fn init(core: Core, _input: Self::Flags) -> (Self, Command<Self::Message>) {
-        let nav_model = segmented_button::ModelBuilder::default();
+        let mut nav_model = nav_bar::Model::default();
+        for &nav_page in NavPage::all() {
+            let id = nav_model
+                .insert()
+                .text(nav_page.title())
+                .data::<NavPage>(nav_page)
+                .id();
+            if nav_page == NavPage::HourlyView {
+                nav_model.activate(id);
+            }
+        }
         
         let mut app = App {
             core,
-            nav_model: nav_model.build(),
+            nav_model: nav_model,
             key_binds: key_binds(),
             modifiers: Modifiers::empty(),
             context_page: ContextPage::Settings,
@@ -104,7 +139,7 @@ impl cosmic::Application for App {
         (app, command)
     }
     
-    fn nav_model(&self) -> Option<&segmented_button::SingleSelectModel> {
+    fn nav_model(&self) -> Option<&nav_bar::Model> {
         Some(&self.nav_model)
     }
     
@@ -121,6 +156,12 @@ impl cosmic::Application for App {
     
     fn header_start(&self) -> Vec<Element<Self::Message>> {
         vec![menu::menu_bar(&self.key_binds)]
+    }
+    
+    fn on_nav_select(&mut self, id: nav_bar::Id) -> Command<Message> {
+        self.nav_model.activate(id);
+        
+        Command::none()
     }
     
     fn subscription(&self) -> Subscription<Self::Message> {
