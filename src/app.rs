@@ -3,7 +3,7 @@ use cosmic::{
     executor, cosmic_theme, theme, widget, ApplicationExt, Apply, Element,
     app::{Command, Core},
     iced::{event, keyboard::Event as KeyEvent, Alignment, Length, Subscription, window, Event},
-    widget::{column, container, nav_bar, scrollable, segmented_button},
+    widget::{column, container, nav_bar, scrollable},
 };
 use cosmic::iced::keyboard::{Key, Modifiers};
 use cosmic::widget::menu::key_bind::KeyBind;
@@ -15,8 +15,7 @@ use crate::menu;
 
 #[derive(Clone, Debug)]
 pub enum Message {
-    AddCity,
-    RemoveCity,
+    ChangeCity,
     Quit,
     ToggleContextPage(ContextPage),
     LaunchUrl(String),
@@ -43,8 +42,7 @@ impl ContextPage {
 pub enum Action {
     About,
     Settings,
-    AddCity,
-    RemoveCity,
+    ChangeCity,
     Quit,
 }
 
@@ -55,8 +53,7 @@ impl MenuAction for Action {
         match self {
             Action::About => Message::ToggleContextPage(ContextPage::About),
             Action::Settings => Message::ToggleContextPage(ContextPage::Settings),
-            Action::AddCity => Message::AddCity,
-            Action::RemoveCity => Message::RemoveCity,
+            Action::ChangeCity => Message::ChangeCity,
             Action::Quit => Message::Quit,
         }
     }
@@ -80,8 +77,8 @@ impl NavPage {
     
     fn title(&self) -> String {
         match self {
-            Self::HourlyView => "Hourly View".to_owned(),
-            Self::DailyView => "Daily View".to_owned(),
+            Self::HourlyView => "Hourly Forecast".to_owned(),
+            Self::DailyView => "Daily Forecast".to_owned(),
             Self::Details => "Details".to_owned(),
         }
     }
@@ -183,10 +180,7 @@ impl cosmic::Application for App {
     
     fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
         match message {
-            Message::AddCity => {
-                // TODO
-            }
-            Message::RemoveCity => {
+            Message::ChangeCity => {
                 // TODO
             }
             Message::Quit => {

@@ -24,8 +24,7 @@ pub fn menu_bar<'a>(key_binds: &HashMap<KeyBind, Action>) -> Element<'a, Message
             menu_items(
                 key_binds,
                 vec![
-                    MenuItem::Button("Add City", Action::AddCity),
-                    MenuItem::Button("Remove City", Action::RemoveCity),
+                    MenuItem::Button("Change City", Action::ChangeCity),
                 ],
             ),
         ),
