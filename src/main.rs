@@ -1,4 +1,5 @@
 mod app;
+mod icon_cache;
 mod key_bind;
 mod menu;
 

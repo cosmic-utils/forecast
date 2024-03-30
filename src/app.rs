@@ -12,6 +12,7 @@ use cosmic::widget::segmented_button::Entity;
 
 use crate::key_bind::key_binds;
 use crate::menu;
+use crate::icon_cache::icon_cache_get;
 
 #[derive(Clone, Debug)]
 pub enum Message {
@@ -82,6 +83,14 @@ impl NavPage {
             Self::Details => "Details".to_owned(),
         }
     }
+    
+    fn icon(&self) -> widget::icon::Icon {
+        match self {
+            Self::HourlyView => icon_cache_get("view-hourly", 16),
+            Self::DailyView => icon_cache_get("view-daily", 16),
+            Self::Details => icon_cache_get("view-detail", 16),
+        }
+    }
 }
 
 pub struct App {
@@ -112,6 +121,7 @@ impl cosmic::Application for App {
         for &nav_page in NavPage::all() {
             let id = nav_model
                 .insert()
+                .icon(nav_page.icon())
                 .text(nav_page.title())
                 .data::<NavPage>(nav_page)
                 .id();
