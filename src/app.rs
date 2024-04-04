@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use cosmic::{
     executor, cosmic_theme, theme, widget, ApplicationExt, Apply, Element,
     app::{Command, Core},
+    cosmic_config::{self, CosmicConfigEntry},
     iced::{event, keyboard::Event as KeyEvent, Alignment, Length, Subscription, window, Event},
     widget::{column, container, nav_bar, scrollable},
 };
@@ -9,7 +10,9 @@ use cosmic::iced::keyboard::{Key, Modifiers};
 use cosmic::widget::menu::key_bind::KeyBind;
 use cosmic::widget::menu::action::MenuAction;
 use cosmic::widget::segmented_button::Entity;
+use serde::{Deserialize, Serialize};
 
+use crate::config::{Config, Units};
 use crate::key_bind::key_binds;
 use crate::menu;
 use crate::icon_cache::icon_cache_get;
@@ -22,6 +25,14 @@ pub enum Message {
     LaunchUrl(String),
     Key(Modifiers, Key),
     Modifiers(Modifiers),
+    Config(Config),
+    Units(Units),
+}
+
+#[derive(Clone, Debug)]
+pub struct Flags {
+    pub config_handler: Option<cosmic_config::Config>,
+    pub config: Config,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -99,11 +110,14 @@ pub struct App {
     key_binds: HashMap<KeyBind, Action>,
     modifiers: Modifiers,
     context_page: ContextPage,
+    config_handler: Option<cosmic_config::Config>,
+    config: Config,
+    units: Vec<String>,
 }
 
 impl cosmic::Application for App {
     type Executor = executor::Default;
-    type Flags = ();
+    type Flags = Flags;
     type Message = Message;
     
     const APP_ID: &'static str = "com.jwestall.CosmicWeather";
@@ -116,7 +130,7 @@ impl cosmic::Application for App {
         &mut self.core
     }
     
-    fn init(core: Core, _input: Self::Flags) -> (Self, Command<Self::Message>) {
+    fn init(core: Core, flags: Self::Flags) -> (Self, Command<Self::Message>) {
         let mut nav_model = nav_bar::Model::default();
         for &nav_page in NavPage::all() {
             let id = nav_model
@@ -130,12 +144,17 @@ impl cosmic::Application for App {
             }
         }
         
+        let app_units = vec!["Fahrenheit".to_string(), "Celsius".to_string()];
+        
         let mut app = App {
             core,
             nav_model: nav_model,
             key_binds: key_binds(),
             modifiers: Modifiers::empty(),
             context_page: ContextPage::Settings,
+            config_handler: flags.config_handler,
+            config: flags.config,
+            units: app_units,
         };
         
         // Do not open nav bar by default
@@ -221,6 +240,16 @@ impl cosmic::Application for App {
             Message::Modifiers(modifiers) => {
                 self.modifiers = modifiers;
             }
+            Message::Config(config) => {
+                if config != self.config {
+                    log::info!("Updating config");
+                    self.config = config;
+                }
+            }
+            Message::Units(units) => {
+                self.config.units = units;
+                return self.save_config();
+            }
         }
     
         Command::none()
@@ -251,6 +280,16 @@ impl App where Self: cosmic::Application, {
         self.set_window_title(window_title, cosmic::iced::window::Id::MAIN)
     }
     
+    fn save_config(&mut self) -> Command<Message> {
+        if let Some(ref config_handler) = self.config_handler {
+            if let Err(err) = self.config.write_entry(config_handler) {
+                log::error!("failed to save config: {}", err);
+            }
+        }
+        
+        Command::none()
+    }
+    
     fn about(&self) -> Element<Message> {
         let cosmic_theme::Spacing { space_xxs, .. } = theme::active().cosmic().spacing;
         let repo = "https://github.com/jwestall/cosmic-weather";
@@ -271,12 +310,27 @@ impl App where Self: cosmic::Application, {
     fn settings(&self) -> Element<Message> {
         let cosmic_theme::Spacing { space_xxs, .. } = theme::active().cosmic().spacing;
         
-        widget::column::with_children(vec![
-            widget::text::title3("Settings").into(),
+        let selected_units = match self.config.units {
+            Units::Fahrenheit => 0,
+            Units::Celsius => 1,
+        };
+        
+        widget::settings::view_column(vec![
+            widget::settings::view_section("General".to_string())
+                .add(
+                    widget::settings::item::builder("Units".to_string()).control(widget::dropdown(
+                        &self.units,
+                        Some(selected_units),
+                        move |index| {
+                            Message::Units(match index {
+                                1 => Units::Celsius,
+                                _ => Units::Fahrenheit,
+                            })
+                        },
+                    )),
+                )
+                .into()
         ])
-        .align_items(Alignment::Center)
-        .spacing(space_xxs)
-        .width(Length::Fill)
         .into()
     }
 }
