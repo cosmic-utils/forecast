@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use cosmic::{
     executor, cosmic_theme, theme, widget, ApplicationExt, Apply, Element,
     app::{Command, Core},
@@ -27,6 +27,8 @@ pub enum Message {
     Modifiers(Modifiers),
     Config(Config),
     Units(Units),
+    DialogComplete,
+    DialogCancel,
 }
 
 #[derive(Clone, Debug)]
@@ -48,6 +50,11 @@ impl ContextPage {
             Self::Settings => "Settings".to_string(),
         }
     }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum DialogPage {
+    Change,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -113,6 +120,8 @@ pub struct App {
     config_handler: Option<cosmic_config::Config>,
     config: Config,
     units: Vec<String>,
+    dialog_pages: VecDeque<DialogPage>,
+    dialog_page_text: widget::Id,
 }
 
 impl cosmic::Application for App {
@@ -155,6 +164,8 @@ impl cosmic::Application for App {
             config_handler: flags.config_handler,
             config: flags.config,
             units: app_units,
+            dialog_pages: VecDeque::new(),
+            dialog_page_text: widget::Id::unique(),
         };
         
         // Do not open nav bar by default
@@ -178,6 +189,35 @@ impl cosmic::Application for App {
             ContextPage::About => self.about(),
             ContextPage::Settings => self.settings(),
         })
+    }
+    
+    fn dialog(&self) -> Option<Element<Message>> {
+        let dialog_page = match self.dialog_pages.front() {
+            Some(some) => some,
+            None => return None,
+        };
+        
+        let cosmic_theme::Spacing { space_xxs, .. } = theme::active().cosmic().spacing;
+        
+        let dialog = match dialog_page {
+            DialogPage::Change => widget::dialog("Change City".to_string())
+                .primary_action(
+                    widget::button::suggested("Save".to_string())
+                        .on_press_maybe(Some(Message::DialogComplete))
+                )
+                .secondary_action(
+                    widget::button::standard("Cancel".to_string())
+                        .on_press(Message::DialogCancel)
+                )
+                .control(
+                    widget::column::with_children(vec![
+                        widget::text::body("Dummy Dialog".to_string()).into(),
+                    ])
+                    .spacing(space_xxs),
+                ),
+        };
+        
+        Some(dialog.into())
     }
     
     fn header_start(&self) -> Vec<Element<Self::Message>> {
@@ -211,6 +251,7 @@ impl cosmic::Application for App {
         match message {
             Message::ChangeCity => {
                 // TODO
+                self.dialog_pages.push_back(DialogPage::Change);
             }
             Message::Quit => {
                 return window::close(window::Id::MAIN);
@@ -249,6 +290,13 @@ impl cosmic::Application for App {
             Message::Units(units) => {
                 self.config.units = units;
                 return self.save_config();
+            }
+            Message::DialogComplete => {
+                // TODO: Add functaionality
+                self.dialog_pages.pop_front();
+            }
+            Message::DialogCancel => {
+                self.dialog_pages.pop_front();
             }
         }
     
