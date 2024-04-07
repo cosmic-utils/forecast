@@ -2,6 +2,7 @@ mod app;
 mod config;
 mod icon_cache;
 mod key_bind;
+mod localize;
 mod menu;
 
 use cosmic::{

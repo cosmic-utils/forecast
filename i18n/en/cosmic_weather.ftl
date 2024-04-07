@@ -1,0 +1,2 @@
+cosmic-weather = COSMIC Weather
+
