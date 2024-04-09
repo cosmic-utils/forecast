@@ -7,34 +7,35 @@ use cosmic::{
 };
 
 use crate::app::{Action, Message};
+use crate::fl;
 
 pub fn menu_bar<'a>(key_binds: &HashMap<KeyBind, Action>) -> Element<'a, Message> {
     MenuBar::new(vec![
         MenuTree::with_children(
-            menu_root("File"),
+            menu_root(fl!("file")),
             menu_items(
                 key_binds,
                 vec![
-                    MenuItem::Button("Quit", Action::Quit),
+                    MenuItem::Button(fl!("quit"), Action::Quit),
                 ],
             ),
         ),
         MenuTree::with_children(
-            menu_root("Edit"),
+            menu_root(fl!("edit")),
             menu_items(
                 key_binds,
                 vec![
-                    MenuItem::Button("Change City", Action::ChangeCity),
+                    MenuItem::Button(fl!("change-city"), Action::ChangeCity),
                 ],
             ),
         ),
         MenuTree::with_children(
-            menu_root("View"),
+            menu_root(fl!("view")),
             menu_items(
                 key_binds,
                 vec![
-                    MenuItem::Button("About", Action::About),
-                    MenuItem::Button("Settings", Action::Settings),
+                    MenuItem::Button(fl!("about"), Action::About),
+                    MenuItem::Button(fl!("settings"), Action::Settings),
                 ],
             ),
         ),

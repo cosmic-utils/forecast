@@ -10,12 +10,12 @@ use cosmic::iced::keyboard::{Key, Modifiers};
 use cosmic::widget::menu::key_bind::KeyBind;
 use cosmic::widget::menu::action::MenuAction;
 use cosmic::widget::segmented_button::Entity;
-use serde::{Deserialize, Serialize};
 
 use crate::config::{Config, Units};
 use crate::key_bind::key_binds;
 use crate::menu;
 use crate::icon_cache::icon_cache_get;
+use crate::fl;
 
 #[derive(Clone, Debug)]
 pub enum Message {
@@ -46,8 +46,8 @@ pub enum ContextPage {
 impl ContextPage {
     fn title(&self) -> String {
         match self {
-            Self::About => "About".to_string(),
-            Self::Settings => "Settings".to_string(),
+            Self::About => fl!("about"),
+            Self::Settings => fl!("settings"),
         }
     }
 }
@@ -96,9 +96,9 @@ impl NavPage {
     
     fn title(&self) -> String {
         match self {
-            Self::HourlyView => "Hourly Forecast".to_owned(),
-            Self::DailyView => "Daily Forecast".to_owned(),
-            Self::Details => "Details".to_owned(),
+            Self::HourlyView => fl!("hourly-forecast"),
+            Self::DailyView => fl!("daily-forecast"),
+            Self::Details => fl!("details"),
         }
     }
     
@@ -153,7 +153,7 @@ impl cosmic::Application for App {
             }
         }
         
-        let app_units = vec!["Fahrenheit".to_string(), "Celsius".to_string()];
+        let app_units = vec![fl!("fahrenheit"), fl!("celsius")];
         
         let mut app = App {
             core,
@@ -200,18 +200,18 @@ impl cosmic::Application for App {
         let cosmic_theme::Spacing { space_xxs, .. } = theme::active().cosmic().spacing;
         
         let dialog = match dialog_page {
-            DialogPage::Change => widget::dialog("Change City".to_string())
+            DialogPage::Change => widget::dialog(fl!("change-city"))
                 .primary_action(
-                    widget::button::suggested("Save".to_string())
+                    widget::button::suggested(fl!("save"))
                         .on_press_maybe(Some(Message::DialogComplete))
                 )
                 .secondary_action(
-                    widget::button::standard("Cancel".to_string())
+                    widget::button::standard(fl!("cancel"))
                         .on_press(Message::DialogCancel)
                 )
                 .control(
                     widget::column::with_children(vec![
-                        widget::text::body("Dummy Dialog".to_string()).into(),
+                        widget::text::body(fl!("dummy-dialog")).into(),
                     ])
                     .spacing(space_xxs),
                 ),
@@ -231,7 +231,7 @@ impl cosmic::Application for App {
     }
     
     fn subscription(&self) -> Subscription<Self::Message> {
-        let mut subscriptions = vec![
+        let subscriptions = vec![
             event::listen_with(|event, status| match event {
                 Event::Keyboard(KeyEvent::KeyPressed { key, modifiers, .. }) => match status {
                     event::Status::Ignored => Some(Message::Key(modifiers, key)),
@@ -304,7 +304,7 @@ impl cosmic::Application for App {
     }
     
     fn view(&self) -> Element<Self::Message> {
-        let page_view = cosmic::widget::text("App is under construction!");
+        let page_view = cosmic::widget::text(fl!("app-under-construction"));
         
         column()
             .spacing(24)
@@ -322,7 +322,7 @@ impl cosmic::Application for App {
 
 impl App where Self: cosmic::Application, {
     fn update_title(&mut self) -> Command<Message> {
-        let window_title = format!("Cosmic Weather");
+        let window_title = format!("{}", fl!("cosmic-weather"));
         
         self.set_header_title(window_title.clone());
         self.set_window_title(window_title, cosmic::iced::window::Id::MAIN)
@@ -343,7 +343,7 @@ impl App where Self: cosmic::Application, {
         let repo = "https://github.com/jwestall/cosmic-weather";
         
         widget::column::with_children(vec![
-            widget::text::title3("COSMIC Weather").into(),
+            widget::text::title3(fl!("cosmic-weather")).into(),
             widget::button::link(repo)
                 .on_press(Message::LaunchUrl(repo.to_string()))
                 .padding(0)
@@ -356,17 +356,15 @@ impl App where Self: cosmic::Application, {
     }
     
     fn settings(&self) -> Element<Message> {
-        let cosmic_theme::Spacing { space_xxs, .. } = theme::active().cosmic().spacing;
-        
         let selected_units = match self.config.units {
             Units::Fahrenheit => 0,
             Units::Celsius => 1,
         };
         
         widget::settings::view_column(vec![
-            widget::settings::view_section("General".to_string())
+            widget::settings::view_section(fl!("general"))
                 .add(
-                    widget::settings::item::builder("Units".to_string()).control(widget::dropdown(
+                    widget::settings::item::builder(fl!("units")).control(widget::dropdown(
                         &self.units,
                         Some(selected_units),
                         move |index| {
