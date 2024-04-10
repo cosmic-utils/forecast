@@ -1,40 +1,38 @@
-use std::sync::OnceLock;
 use i18n_embed::{
     fluent::{fluent_language_loader, FluentLanguageLoader},
     DefaultLocalizer, LanguageLoader, Localizer,
 };
+use once_cell::sync::Lazy;
 use rust_embed::RustEmbed;
 
 #[derive(RustEmbed)]
 #[folder = "i18n/"]
 struct Localizations;
 
-pub static LANGUAGE_LOADER: OnceLock<FluentLanguageLoader> = OnceLock::new();
+pub static LANGUAGE_LOADER: Lazy<FluentLanguageLoader> = Lazy::new(|| {
+    let loader: FluentLanguageLoader = fluent_language_loader!();
+    
+    loader
+        .load_fallback_language(&Localizations)
+        .expect("Error loading fallback language");
+    
+    loader
+});
 
 #[macro_export]
 macro_rules! fl {
     ($message_id:literal) => {{
-        i18n_embed_fl::fl!($crate::localize::LANGUAGE_LOADER.get().unwrap(), $message_id)
+        i18n_embed_fl::fl!($crate::localize::LANGUAGE_LOADER, $message_id)
     }};
 
     ($message_id:literal, $($args:expr),*) => {{
-        i18n_embed_fl::fl!($crate::localize::LANGUAGE_LOADER.get().unwrap(), $message_id, $($args), *)
+        i18n_embed_fl::fl!($crate::localize::LANGUAGE_LOADER, $message_id, $($args), *)
     }};
 }
 
 pub fn localizer() -> Box<dyn Localizer> {
-    LANGUAGE_LOADER.get_or_init(|| {
-        let loader: FluentLanguageLoader = fluent_language_loader!();
-
-        loader
-            .load_fallback_language(&Localizations)
-            .expect("Error while loading fallback language");
-
-        loader
-    });
-
     Box::from(DefaultLocalizer::new(
-        LANGUAGE_LOADER.get().unwrap(),
+        &*LANGUAGE_LOADER,
         &Localizations,
     ))
 }

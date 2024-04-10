@@ -1040,6 +1040,7 @@ dependencies = [
  "i18n-embed-fl",
  "libcosmic",
  "log",
+ "once_cell",
  "open",
  "rust-embed",
  "serde",
