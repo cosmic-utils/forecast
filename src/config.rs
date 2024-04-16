@@ -13,12 +13,14 @@ pub enum Units {
 
 #[derive(Clone, CosmicConfigEntry, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Config {
+    pub location: String,
     pub units: Units,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Self {
+            location: "Unknown".to_string(),
             units: Units::Fahrenheit,
         }
     }

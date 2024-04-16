@@ -16,6 +16,7 @@ use crate::key_bind::key_binds;
 use crate::menu;
 use crate::icon_cache::icon_cache_get;
 use crate::fl;
+use crate::location::Location;
 
 #[derive(Clone, Debug)]
 pub enum Message {
@@ -29,6 +30,7 @@ pub enum Message {
     Units(Units),
     DialogComplete,
     DialogCancel,
+    DialogUpdate(DialogPage),
 }
 
 #[derive(Clone, Debug)]
@@ -54,7 +56,7 @@ impl ContextPage {
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DialogPage {
-    Change,
+    Change(String),
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -200,7 +202,7 @@ impl cosmic::Application for App {
         let cosmic_theme::Spacing { space_xxs, .. } = theme::active().cosmic().spacing;
         
         let dialog = match dialog_page {
-            DialogPage::Change => widget::dialog(fl!("change-city"))
+            DialogPage::Change(city) => widget::dialog(fl!("change-city"))
                 .primary_action(
                     widget::button::suggested(fl!("save"))
                         .on_press_maybe(Some(Message::DialogComplete))
@@ -211,7 +213,10 @@ impl cosmic::Application for App {
                 )
                 .control(
                     widget::column::with_children(vec![
-                        widget::text::body(fl!("dummy-dialog")).into(),
+                        widget::text_input(fl!("search"), city.as_str())
+                            .id(self.dialog_page_text.clone())
+                            .on_input(move |city| Message::DialogUpdate(DialogPage::Change(city)))
+                            .into(),
                     ])
                     .spacing(space_xxs),
                 ),
@@ -251,7 +256,7 @@ impl cosmic::Application for App {
         match message {
             Message::ChangeCity => {
                 // TODO
-                self.dialog_pages.push_back(DialogPage::Change);
+                self.dialog_pages.push_back(DialogPage::Change(String::new()));
             }
             Message::Quit => {
                 return window::close(window::Id::MAIN);
@@ -297,6 +302,9 @@ impl cosmic::Application for App {
             }
             Message::DialogCancel => {
                 self.dialog_pages.pop_front();
+            }
+            Message::DialogUpdate(dialog_page) => {
+                self.dialog_pages[0] = dialog_page;
             }
         }
     

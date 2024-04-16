@@ -20,6 +20,7 @@ change-city = Change City
 save = Save
 cancel = Cancel
 dummy-dialog = Dummy Dialog
+search = Search
 
 # Nav Page
 hourly-forecast = Hourly Forecast
