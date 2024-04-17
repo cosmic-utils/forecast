@@ -1,5 +1,8 @@
 mod app;
 mod config;
+mod daily_view;
+mod detail_view;
+mod hourly_view;
 mod icon_cache;
 mod key_bind;
 mod localize;

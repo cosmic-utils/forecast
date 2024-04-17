@@ -120,7 +120,7 @@ pub struct App {
     modifiers: Modifiers,
     context_page: ContextPage,
     config_handler: Option<cosmic_config::Config>,
-    config: Config,
+    pub config: Config,
     units: Vec<String>,
     dialog_pages: VecDeque<DialogPage>,
     dialog_page_text: widget::Id,
@@ -312,7 +312,12 @@ impl cosmic::Application for App {
     }
     
     fn view(&self) -> Element<Self::Message> {
-        let page_view = cosmic::widget::text(fl!("app-under-construction"));
+        let page_view = match self.nav_model.active_data::<NavPage>() {
+            Some(NavPage::HourlyView) => self.view_hourly_forecast(),
+            Some(NavPage::DailyView) => self.view_daily_forecast(),
+            Some(NavPage::Details) => self.view_detail_forecast(),
+            None => cosmic::widget::text("Unkown page selected.").into(),
+        };
         
         column()
             .spacing(24)
