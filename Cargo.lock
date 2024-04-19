@@ -1051,6 +1051,7 @@ dependencies = [
  "reqwest",
  "rust-embed",
  "serde",
+ "tokio",
 ]
 
 [[package]]

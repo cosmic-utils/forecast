@@ -16,7 +16,7 @@ use crate::key_bind::key_binds;
 use crate::menu;
 use crate::icon_cache::icon_cache_get;
 use crate::fl;
-use crate::location::Location;
+use crate::location::{self, Location};
 
 #[derive(Clone, Debug)]
 pub enum Message {
@@ -28,7 +28,7 @@ pub enum Message {
     Modifiers(Modifiers),
     Config(Config),
     Units(Units),
-    DialogComplete,
+    DialogComplete(String),
     DialogCancel,
     DialogUpdate(DialogPage),
 }
@@ -205,7 +205,7 @@ impl cosmic::Application for App {
             DialogPage::Change(city) => widget::dialog(fl!("change-city"))
                 .primary_action(
                     widget::button::suggested(fl!("save"))
-                        .on_press_maybe(Some(Message::DialogComplete))
+                        .on_press_maybe(Some(Message::DialogComplete(city.to_string())))
                 )
                 .secondary_action(
                     widget::button::standard(fl!("cancel"))
@@ -296,8 +296,20 @@ impl cosmic::Application for App {
                 self.config.units = units;
                 return self.save_config();
             }
-            Message::DialogComplete => {
+            Message::DialogComplete(city) => {
                 // TODO: Add functaionality
+                tokio::runtime::Builder::new_multi_thread()
+                    .enable_all()
+                    .build()
+                    .unwrap()
+                    .block_on(async {
+                        let data = &(Location::get_location_data(city.as_str()).await.unwrap().unwrap()[0]);
+                            
+                        self.config.location = data.display_name.clone();
+                        self.config.lat = data.lat.clone();
+                        self.config.lon = data.lon.clone();
+                    });
+                
                 self.dialog_pages.pop_front();
             }
             Message::DialogCancel => {
