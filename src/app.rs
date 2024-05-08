@@ -310,6 +310,7 @@ impl cosmic::Application for App {
                         self.config.lon = data.lon.clone();
                     });
                 
+                self.save_config();
                 self.dialog_pages.pop_front();
             }
             Message::DialogCancel => {
