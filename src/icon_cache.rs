@@ -17,7 +17,7 @@ pub struct IconCache {
 impl IconCache {
     pub fn new() -> Self {
         let mut cache = HashMap::new();
-        
+
         macro_rules! bundle {
             ($name:expr, $size:expr) => {
                 let data: &'static [u8] = include_bytes!(concat!("../res/icons/", $name, ".svg"));
@@ -30,14 +30,14 @@ impl IconCache {
                 );
             };
         }
-        
+
         bundle!("view-daily", 16);
         bundle!("view-detail", 16);
         bundle!("view-hourly", 16);
-        
+
         Self { cache }
     }
-    
+
     pub fn get(&mut self, name: &'static str, size: u16) -> icon::Icon {
         let handle = self
             .cache

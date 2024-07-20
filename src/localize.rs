@@ -11,11 +11,11 @@ struct Localizations;
 
 pub static LANGUAGE_LOADER: Lazy<FluentLanguageLoader> = Lazy::new(|| {
     let loader: FluentLanguageLoader = fluent_language_loader!();
-    
+
     loader
         .load_fallback_language(&Localizations)
         .expect("Error loading fallback language");
-    
+
     loader
 });
 
@@ -31,10 +31,7 @@ macro_rules! fl {
 }
 
 pub fn localizer() -> Box<dyn Localizer> {
-    Box::from(DefaultLocalizer::new(
-        &*LANGUAGE_LOADER,
-        &Localizations,
-    ))
+    Box::from(DefaultLocalizer::new(&*LANGUAGE_LOADER, &Localizations))
 }
 
 pub fn localize() {

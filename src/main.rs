@@ -10,9 +10,9 @@ mod location;
 mod menu;
 
 use cosmic::{
-    Application,
     app::Settings,
     cosmic_config::{self, CosmicConfigEntry},
+    Application,
 };
 
 use crate::app::{App, Flags};
@@ -23,7 +23,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .antialiasing(true)
         .client_decorations(true)
         .debug(false);
-        
+
     let (config_handler, config) = match cosmic_config::Config::new(App::APP_ID, CONFIG_VERSION) {
         Ok(config_handler) => {
             let config = Config::get_entry(&config_handler).unwrap_or_else(|(errs, config)| {
@@ -37,13 +37,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             (None, Config::default())
         }
     };
-    
+
     let flags = Flags {
         config_handler,
         config,
     };
-        
+
     cosmic::app::run::<App>(settings, flags)?;
-    
+
     Ok(())
 }
