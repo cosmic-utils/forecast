@@ -1,6 +1,8 @@
-# COSMIC Weather
-
-A simple weather application for the COSMIC Desktop.
+<div align="center">
+  <h1>COSMIC Weather</h1>
+  <img src="res/icons/hicolor/scalable/apps/com.jwestall.CosmicWeather.svg">
+  <p>A simple weather application for the COSMIC Desktop</p>
+</div>
 
 # Project Status
 

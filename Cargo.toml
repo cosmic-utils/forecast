@@ -22,3 +22,6 @@ tokio = "1.37.0"
 git = "https://github.com/pop-os/libcosmic"
 default-features = false
 features = ["debug", "winit", "wgpu", "tokio"]
+
+[build-dependencies]
+vergen = { version = "8", features = ["git", "gitcl"] }

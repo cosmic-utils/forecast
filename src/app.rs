@@ -367,18 +367,34 @@ where
     }
 
     fn about(&self) -> Element<Message> {
-        let cosmic_theme::Spacing { space_xxs, .. } = theme::active().cosmic().spacing;
-        let repo = "https://github.com/jwestall/cosmic-weather";
-
+        let spacing = theme::active().cosmic().spacing;
+        let repository = "https://github.com/jwestall/cosmic-weather";
+        let hash = env!("VERGEN_GIT_SHA");
+        let short_hash: String = hash.chars().take(7).collect();
+        let date = env!("VERGEN_GIT_COMMIT_DATE");
         widget::column::with_children(vec![
+            widget::svg(widget::svg::Handle::from_memory(
+                &include_bytes!(
+                    "../res/icons/hicolor/scalable/apps/com.jwestall.CosmicWeather.svg"
+                )[..],
+            ))
+            .into(),
             widget::text::title3(fl!("cosmic-weather")).into(),
-            widget::button::link(repo)
-                .on_press(Message::LaunchUrl(repo.to_string()))
-                .padding(0)
+            widget::button::link(repository)
+                .on_press(Message::LaunchUrl(repository.to_string()))
+                .padding(spacing.space_none)
                 .into(),
+            widget::button::link(fl!(
+                "git-description",
+                hash = short_hash.as_str(),
+                date = date
+            ))
+            .on_press(Message::LaunchUrl(format!("{repository}/commits/{hash}")))
+            .padding(spacing.space_none)
+            .into(),
         ])
         .align_items(Alignment::Center)
-        .spacing(space_xxs)
+        .spacing(spacing.space_xxs)
         .width(Length::Fill)
         .into()
     }
