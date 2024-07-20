@@ -1,4 +1,4 @@
-cosmic-weather = COSMIC Weather
+cosmic-ext-weather = Weather
 app-under-construction = App is under construction!
 
 # Units

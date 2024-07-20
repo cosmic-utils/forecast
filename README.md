@@ -1,7 +1,7 @@
 <div align="center">
-  <img src="res/icons/hicolor/scalable/apps/com.jwestall.CosmicWeather.svg">
-  <h1>COSMIC Weather</h1>
-  <p>A simple weather application for the COSMIC Desktop</p>
+  <img src="res/icons/hicolor/scalable/apps/com.jwestall.Weather.svg">
+  <h1>Weather</h1>
+  <p>A simple weather application for the COSMIC™ Desktop</p>
 </div>
 
 # Project Status

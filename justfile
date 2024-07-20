@@ -1,5 +1,5 @@
-name := 'cosmic-weather'
-export APPID := 'com.jwestall.CosmicWeather'
+name := 'cosmic-ext-weather'
+export APPID := 'com.jwestall.Weather'
 
 rootdir := ''
 prefix := '/usr'

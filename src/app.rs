@@ -128,7 +128,7 @@ impl cosmic::Application for App {
     type Flags = Flags;
     type Message = Message;
 
-    const APP_ID: &'static str = "com.jwestall.CosmicWeather";
+    const APP_ID: &'static str = "com.jwestall.Weather";
 
     fn core(&self) -> &Core {
         &self.core
@@ -350,7 +350,7 @@ where
     Self: cosmic::Application,
 {
     fn update_title(&mut self) -> Command<Message> {
-        let window_title = format!("{}", fl!("cosmic-weather"));
+        let window_title = format!("{}", fl!("cosmic-ext-weather"));
 
         self.set_header_title(window_title.clone());
         self.set_window_title(window_title)
@@ -374,12 +374,10 @@ where
         let date = env!("VERGEN_GIT_COMMIT_DATE");
         widget::column::with_children(vec![
             widget::svg(widget::svg::Handle::from_memory(
-                &include_bytes!(
-                    "../res/icons/hicolor/scalable/apps/com.jwestall.CosmicWeather.svg"
-                )[..],
+                &include_bytes!("../res/icons/hicolor/scalable/apps/com.jwestall.Weather.svg")[..],
             ))
             .into(),
-            widget::text::title3(fl!("cosmic-weather")).into(),
+            widget::text::title3(fl!("cosmic-ext-weather")).into(),
             widget::button::link(repository)
                 .on_press(Message::LaunchUrl(repository.to_string()))
                 .padding(spacing.space_none)

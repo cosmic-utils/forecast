@@ -1034,6 +1034,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "cosmic-ext-weather"
+version = "0.1.0"
+dependencies = [
+ "i18n-embed",
+ "i18n-embed-fl",
+ "libcosmic",
+ "log",
+ "once_cell",
+ "open",
+ "reqwest",
+ "rust-embed",
+ "serde",
+ "tokio",
+ "vergen",
+]
+
+[[package]]
 name = "cosmic-text"
 version = "0.12.0"
 source = "git+https://github.com/pop-os/cosmic-text.git#4f316658050536c4254fb70639f4b5203c31dbce"
@@ -1070,23 +1087,6 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
-]
-
-[[package]]
-name = "cosmic-weather"
-version = "0.1.0"
-dependencies = [
- "i18n-embed",
- "i18n-embed-fl",
- "libcosmic",
- "log",
- "once_cell",
- "open",
- "reqwest",
- "rust-embed",
- "serde",
- "tokio",
- "vergen",
 ]
 
 [[package]]
