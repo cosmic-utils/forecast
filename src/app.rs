@@ -1,22 +1,23 @@
-use std::collections::{HashMap, VecDeque};
+use cosmic::iced::keyboard::{Key, Modifiers};
+use cosmic::widget::menu::action::MenuAction;
+use cosmic::widget::menu::key_bind::KeyBind;
 use cosmic::{
-    executor, cosmic_theme, theme, widget, ApplicationExt, Apply, Element,
     app::{Command, Core},
     cosmic_config::{self, CosmicConfigEntry},
-    iced::{event, keyboard::Event as KeyEvent, Alignment, Length, Subscription, window, Event},
+    cosmic_theme, executor,
+    iced::{event, keyboard::Event as KeyEvent, window, Alignment, Event, Length, Subscription},
+    theme, widget,
     widget::{column, container, nav_bar, scrollable},
+    ApplicationExt, Apply, Element,
 };
-use cosmic::iced::keyboard::{Key, Modifiers};
-use cosmic::widget::menu::key_bind::KeyBind;
-use cosmic::widget::menu::action::MenuAction;
-use cosmic::widget::segmented_button::Entity;
+use std::collections::{HashMap, VecDeque};
 
 use crate::config::{Config, Units};
-use crate::key_bind::key_binds;
-use crate::menu;
-use crate::icon_cache::icon_cache_get;
 use crate::fl;
-use crate::location::{self, Location};
+use crate::icon_cache::icon_cache_get;
+use crate::key_bind::key_binds;
+use crate::location::Location;
+use crate::menu;
 
 #[derive(Clone, Debug)]
 pub enum Message {
@@ -42,7 +43,7 @@ pub struct Flags {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum ContextPage {
     About,
-    Settings
+    Settings,
 }
 
 impl ContextPage {
@@ -69,8 +70,8 @@ pub enum Action {
 
 impl MenuAction for Action {
     type Message = Message;
-    
-    fn message(&self, _entity_op: Option<Entity>) -> Self::Message {
+
+    fn message(&self) -> Self::Message {
         match self {
             Action::About => Message::ToggleContextPage(ContextPage::About),
             Action::Settings => Message::ToggleContextPage(ContextPage::Settings),
@@ -89,13 +90,9 @@ pub enum NavPage {
 
 impl NavPage {
     fn all() -> &'static [Self] {
-        &[
-            Self::HourlyView,
-            Self::DailyView,
-            Self::Details,
-        ]
+        &[Self::HourlyView, Self::DailyView, Self::Details]
     }
-    
+
     fn title(&self) -> String {
         match self {
             Self::HourlyView => fl!("hourly-forecast"),
@@ -103,7 +100,7 @@ impl NavPage {
             Self::Details => fl!("details"),
         }
     }
-    
+
     fn icon(&self) -> widget::icon::Icon {
         match self {
             Self::HourlyView => icon_cache_get("view-hourly", 16),
@@ -130,17 +127,17 @@ impl cosmic::Application for App {
     type Executor = executor::Default;
     type Flags = Flags;
     type Message = Message;
-    
+
     const APP_ID: &'static str = "com.jwestall.CosmicWeather";
-    
+
     fn core(&self) -> &Core {
         &self.core
     }
-    
+
     fn core_mut(&mut self) -> &mut Core {
         &mut self.core
     }
-    
+
     fn init(core: Core, flags: Self::Flags) -> (Self, Command<Self::Message>) {
         let mut nav_model = nav_bar::Model::default();
         for &nav_page in NavPage::all() {
@@ -154,9 +151,9 @@ impl cosmic::Application for App {
                 nav_model.activate(id);
             }
         }
-        
+
         let app_units = vec![fl!("fahrenheit"), fl!("celsius")];
-        
+
         let mut app = App {
             core,
             nav_model: nav_model,
@@ -169,94 +166,93 @@ impl cosmic::Application for App {
             dialog_pages: VecDeque::new(),
             dialog_page_text: widget::Id::unique(),
         };
-        
+
         // Do not open nav bar by default
         app.core.nav_bar_set_toggled(false);
-        
+
         let command = app.update_title();
-        
+
         (app, command)
     }
-    
+
     fn nav_model(&self) -> Option<&nav_bar::Model> {
         Some(&self.nav_model)
     }
-    
+
     fn context_drawer(&self) -> Option<Element<Message>> {
         if !self.core.window.show_context {
             return None;
         }
-        
+
         Some(match self.context_page {
             ContextPage::About => self.about(),
             ContextPage::Settings => self.settings(),
         })
     }
-    
+
     fn dialog(&self) -> Option<Element<Message>> {
         let dialog_page = match self.dialog_pages.front() {
             Some(some) => some,
             None => return None,
         };
-        
+
         let cosmic_theme::Spacing { space_xxs, .. } = theme::active().cosmic().spacing;
-        
+
         let dialog = match dialog_page {
             DialogPage::Change(city) => widget::dialog(fl!("change-city"))
                 .primary_action(
                     widget::button::suggested(fl!("save"))
-                        .on_press_maybe(Some(Message::DialogComplete(city.to_string())))
+                        .on_press_maybe(Some(Message::DialogComplete(city.to_string()))),
                 )
                 .secondary_action(
-                    widget::button::standard(fl!("cancel"))
-                        .on_press(Message::DialogCancel)
+                    widget::button::standard(fl!("cancel")).on_press(Message::DialogCancel),
                 )
                 .control(
-                    widget::column::with_children(vec![
-                        widget::text_input(fl!("search"), city.as_str())
-                            .id(self.dialog_page_text.clone())
-                            .on_input(move |city| Message::DialogUpdate(DialogPage::Change(city)))
-                            .into(),
-                    ])
+                    widget::column::with_children(vec![widget::text_input(
+                        fl!("search"),
+                        city.as_str(),
+                    )
+                    .id(self.dialog_page_text.clone())
+                    .on_input(move |city| Message::DialogUpdate(DialogPage::Change(city)))
+                    .into()])
                     .spacing(space_xxs),
                 ),
         };
-        
+
         Some(dialog.into())
     }
-    
+
     fn header_start(&self) -> Vec<Element<Self::Message>> {
         vec![menu::menu_bar(&self.key_binds)]
     }
-    
+
     fn on_nav_select(&mut self, id: nav_bar::Id) -> Command<Message> {
         self.nav_model.activate(id);
-        
+
         Command::none()
     }
-    
+
     fn subscription(&self) -> Subscription<Self::Message> {
-        let subscriptions = vec![
-            event::listen_with(|event, status| match event {
-                Event::Keyboard(KeyEvent::KeyPressed { key, modifiers, .. }) => match status {
-                    event::Status::Ignored => Some(Message::Key(modifiers, key)),
-                    event::Status::Captured => None,
-                },
-                Event::Keyboard(KeyEvent::ModifiersChanged(modifiers)) => {
-                    Some(Message::Modifiers(modifiers))
-                }
-                _ => None,
-            }),
-        ];
-        
+        let subscriptions = vec![event::listen_with(|event, status| match event {
+            Event::Keyboard(KeyEvent::KeyPressed { key, modifiers, .. }) => match status {
+                event::Status::Ignored => Some(Message::Key(modifiers, key)),
+                event::Status::Captured => None,
+            },
+            Event::Keyboard(KeyEvent::ModifiersChanged(modifiers)) => {
+                Some(Message::Modifiers(modifiers))
+            }
+            _ => None,
+        })];
+
         Subscription::batch(subscriptions)
     }
-    
+
     fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
         match message {
             Message::ChangeCity => {
                 // TODO
-                self.dialog_pages.push_back(DialogPage::Change(String::new()));
+                self.dialog_pages
+                    .push_back(DialogPage::Change(String::new()));
             }
             Message::Quit => {
                 return window::close(window::Id::MAIN);
@@ -275,11 +271,11 @@ impl cosmic::Application for App {
                 Err(err) => {
                     log::warn!("failed to open {:?}: {}", url, err);
                 }
-            }
+            },
             Message::Key(modifiers, key) => {
                 for (key_bind, action) in self.key_binds.iter() {
                     if key_bind.matches(modifiers, &key) {
-                        return self.update(action.message(None));
+                        return self.update(action.message());
                     }
                 }
             }
@@ -303,13 +299,16 @@ impl cosmic::Application for App {
                     .build()
                     .unwrap()
                     .block_on(async {
-                        let data = &(Location::get_location_data(city.as_str()).await.unwrap().unwrap()[0]);
-                            
+                        let data = &(Location::get_location_data(city.as_str())
+                            .await
+                            .unwrap()
+                            .unwrap()[0]);
+
                         self.config.location = data.display_name.clone();
                         self.config.lat = data.lat.clone();
                         self.config.lon = data.lon.clone();
                     });
-                
+
                 self.save_config();
                 self.dialog_pages.pop_front();
             }
@@ -320,10 +319,10 @@ impl cosmic::Application for App {
                 self.dialog_pages[0] = dialog_page;
             }
         }
-    
+
         Command::none()
     }
-    
+
     fn view(&self) -> Element<Self::Message> {
         let page_view = match self.nav_model.active_data::<NavPage>() {
             Some(NavPage::HourlyView) => self.view_hourly_forecast(),
@@ -331,7 +330,7 @@ impl cosmic::Application for App {
             Some(NavPage::Details) => self.view_detail_forecast(),
             None => cosmic::widget::text("Unkown page selected.").into(),
         };
-        
+
         column()
             .spacing(24)
             .push(container(page_view).width(Length::Fill))
@@ -346,63 +345,64 @@ impl cosmic::Application for App {
     }
 }
 
-impl App where Self: cosmic::Application, {
+impl App
+where
+    Self: cosmic::Application,
+{
     fn update_title(&mut self) -> Command<Message> {
         let window_title = format!("{}", fl!("cosmic-weather"));
-        
+
         self.set_header_title(window_title.clone());
-        self.set_window_title(window_title, cosmic::iced::window::Id::MAIN)
+        self.set_window_title(window_title)
     }
-    
+
     fn save_config(&mut self) -> Command<Message> {
         if let Some(ref config_handler) = self.config_handler {
             if let Err(err) = self.config.write_entry(config_handler) {
                 log::error!("failed to save config: {}", err);
             }
         }
-        
+
         Command::none()
     }
-    
+
     fn about(&self) -> Element<Message> {
         let cosmic_theme::Spacing { space_xxs, .. } = theme::active().cosmic().spacing;
         let repo = "https://github.com/jwestall/cosmic-weather";
-        
+
         widget::column::with_children(vec![
             widget::text::title3(fl!("cosmic-weather")).into(),
             widget::button::link(repo)
                 .on_press(Message::LaunchUrl(repo.to_string()))
                 .padding(0)
-                .into()
+                .into(),
         ])
         .align_items(Alignment::Center)
         .spacing(space_xxs)
         .width(Length::Fill)
         .into()
     }
-    
+
     fn settings(&self) -> Element<Message> {
         let selected_units = match self.config.units {
             Units::Fahrenheit => 0,
             Units::Celsius => 1,
         };
-        
-        widget::settings::view_column(vec![
-            widget::settings::view_section(fl!("general"))
-                .add(
-                    widget::settings::item::builder(fl!("units")).control(widget::dropdown(
-                        &self.units,
-                        Some(selected_units),
-                        move |index| {
-                            Message::Units(match index {
-                                1 => Units::Celsius,
-                                _ => Units::Fahrenheit,
-                            })
-                        },
-                    )),
-                )
-                .into()
-        ])
+
+        widget::settings::view_column(vec![widget::settings::view_section(fl!("general"))
+            .add(
+                widget::settings::item::builder(fl!("units")).control(widget::dropdown(
+                    &self.units,
+                    Some(selected_units),
+                    move |index| {
+                        Message::Units(match index {
+                            1 => Units::Celsius,
+                            _ => Units::Fahrenheit,
+                        })
+                    },
+                )),
+            )
+            .into()])
         .into()
     }
 }

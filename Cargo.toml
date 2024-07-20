@@ -8,7 +8,10 @@ log = "0.4.21"
 open = "5.1.2"
 serde = "1.0.197"
 # Internationalization
-i18n-embed = { version = "0.14", features = ["fluent-system", "desktop-requester"] }
+i18n-embed = { version = "0.14", features = [
+    "fluent-system",
+    "desktop-requester",
+] }
 i18n-embed-fl = "0.7"
 rust-embed = "8"
 once_cell = "1.19.0"
@@ -18,4 +21,4 @@ tokio = "1.37.0"
 [dependencies.libcosmic]
 git = "https://github.com/pop-os/libcosmic"
 default-features = false
-features = ["debug", "wayland", "tokio"]
+features = ["debug", "winit", "wgpu", "tokio"]
