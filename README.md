@@ -21,4 +21,4 @@ Below are the current goals for development of this app. Feel free to contribute
 
 # Screenshot
 
-![Screenshot](screenshots/pre-release.png)
+![Screenshot](screenshots/window.png)
