@@ -1,6 +1,6 @@
 <div align="center">
-  <h1>COSMIC Weather</h1>
   <img src="res/icons/hicolor/scalable/apps/com.jwestall.CosmicWeather.svg">
+  <h1>COSMIC Weather</h1>
   <p>A simple weather application for the COSMIC Desktop</p>
 </div>
 
