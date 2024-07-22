@@ -8,6 +8,7 @@ mod key_bind;
 mod localize;
 mod location;
 mod menu;
+mod weather;
 
 use cosmic::{
     app::Settings,

@@ -17,6 +17,7 @@ rust-embed = "8"
 once_cell = "1.19.0"
 reqwest = { version = "0.12.3", features = ["json"] }
 tokio = "1.37.0"
+chrono = { version = "0.4.38", features = ["serde"]}
 
 [dependencies.libcosmic]
 git = "https://github.com/pop-os/libcosmic"
