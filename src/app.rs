@@ -1,3 +1,4 @@
+use cosmic::config;
 use cosmic::iced::keyboard::{Key, Modifiers};
 use cosmic::widget::menu::action::MenuAction;
 use cosmic::widget::menu::key_bind::KeyBind;
@@ -166,6 +167,25 @@ impl cosmic::Application for App {
             dialog_pages: VecDeque::new(),
             dialog_page_text: widget::Id::unique(),
         };
+
+        // Default location to Denver if empty
+        // TODO: Default to user location 
+        if app.config.location.is_empty() || app.config.location == "Unknown" {
+            tokio::runtime::Builder::new_multi_thread()
+                    .enable_all()
+                    .build()
+                    .unwrap()
+                    .block_on(async {
+                        let data = &(Location::get_location_data("Denver")
+                            .await
+                            .unwrap()
+                            .unwrap()[0]);
+
+                        app.config.location = data.display_name.clone();
+                        app.config.lon = data.lon.clone();
+                        app.config.lat = data.lat.clone();
+                    });
+        }
 
         // Do not open nav bar by default
         app.core.nav_bar_set_toggled(false);
