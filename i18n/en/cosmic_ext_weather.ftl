@@ -14,7 +14,14 @@ git-description = Git commit {$hash} on {$date}
 ## Settings
 settings = Settings
 general = General
+appearance = Appearance
+theme = Theme
 units = Units
+
+## App Themes
+dark = Dark
+light = Light
+system = Match desktop
 
 # Dialog Page
 change-city = Change City

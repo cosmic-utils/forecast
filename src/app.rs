@@ -1,4 +1,4 @@
-use config::CONFIG_VERSION;
+use config::{AppTheme, CONFIG_VERSION};
 use cosmic::cosmic_config::Update;
 use cosmic::cosmic_theme::ThemeMode;
 use cosmic::iced::keyboard::{Key, Modifiers};
@@ -40,6 +40,7 @@ pub enum Message {
     Modifiers(Modifiers),
     Config(WeatherConfig),
     Units(Units),
+    AppTheme(AppTheme),
     DialogComplete(String),
     DialogCancel,
     DialogUpdate(DialogPage),
@@ -132,6 +133,7 @@ pub struct App {
     config_handler: Option<cosmic_config::Config>,
     pub config: WeatherConfig,
     units: Vec<String>,
+    app_themes: Vec<String>,
     dialog_pages: VecDeque<DialogPage>,
     dialog_page_text: widget::Id,
 }
@@ -167,6 +169,7 @@ impl cosmic::Application for App {
 
         let mut commands = vec![];
         let app_units = vec![fl!("fahrenheit"), fl!("celsius")];
+        let app_themes = vec![fl!("light"), fl!("dark"), fl!("system")];
 
         let mut app = App {
             core,
@@ -177,6 +180,7 @@ impl cosmic::Application for App {
             config_handler: flags.config_handler,
             config: flags.config,
             units: app_units,
+            app_themes,
             dialog_pages: VecDeque::new(),
             dialog_page_text: widget::Id::unique(),
         };
@@ -363,6 +367,11 @@ impl cosmic::Application for App {
                 self.config.units = units;
                 commands.push(self.save_config());
             }
+            Message::AppTheme(theme) => {
+                self.config.app_theme = theme;
+                commands.push(self.save_config());
+                commands.push(self.save_theme());
+            }
             Message::DialogComplete(city) => {
                 let command =
                     Command::perform(Location::get_location_data(city), |data| match data {
@@ -488,20 +497,43 @@ where
             Units::Celsius => 1,
         };
 
-        widget::settings::view_column(vec![widget::settings::view_section(fl!("general"))
-            .add(
-                widget::settings::item::builder(fl!("units")).control(widget::dropdown(
-                    &self.units,
-                    Some(selected_units),
-                    move |index| {
-                        Message::Units(match index {
-                            1 => Units::Celsius,
-                            _ => Units::Fahrenheit,
-                        })
-                    },
-                )),
-            )
-            .into()])
+        let selected_theme = match self.config.app_theme {
+            config::AppTheme::Light => 0,
+            config::AppTheme::Dark => 1,
+            config::AppTheme::System => 2,
+        };
+
+        widget::settings::view_column(vec![
+            widget::settings::view_section(fl!("general"))
+                .add(
+                    widget::settings::item::builder(fl!("units")).control(widget::dropdown(
+                        &self.units,
+                        Some(selected_units),
+                        move |index| {
+                            Message::Units(match index {
+                                1 => Units::Celsius,
+                                _ => Units::Fahrenheit,
+                            })
+                        },
+                    )),
+                )
+                .into(),
+            widget::settings::view_section(fl!("appearance"))
+                .add(
+                    widget::settings::item::builder(fl!("theme")).control(widget::dropdown(
+                        &self.app_themes,
+                        Some(selected_theme),
+                        move |index| {
+                            Message::AppTheme(match index {
+                                0 => AppTheme::Light,
+                                1 => AppTheme::Dark,
+                                _ => AppTheme::System,
+                            })
+                        },
+                    )),
+                )
+                .into(),
+        ])
         .into()
     }
 }
