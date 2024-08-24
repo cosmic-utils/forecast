@@ -1,4 +1,3 @@
-use cosmic::config;
 use cosmic::iced::keyboard::{Key, Modifiers};
 use cosmic::widget::menu::action::MenuAction;
 use cosmic::widget::menu::key_bind::KeyBind;
@@ -13,12 +12,17 @@ use cosmic::{
 };
 use std::collections::{HashMap, VecDeque};
 
-use crate::config::{Config, Units};
+pub mod config;
+pub mod icon_cache;
+pub mod key_bind;
+pub mod localize;
+pub mod menu;
+
+use crate::app::config::{Config, Units};
+use crate::app::icon_cache::icon_cache_get;
+use crate::app::key_bind::key_binds;
 use crate::fl;
-use crate::icon_cache::icon_cache_get;
-use crate::key_bind::key_binds;
-use crate::location::Location;
-use crate::menu;
+use crate::model::location::Location;
 
 #[derive(Clone, Debug)]
 pub enum Message {
@@ -169,22 +173,22 @@ impl cosmic::Application for App {
         };
 
         // Default location to Denver if empty
-        // TODO: Default to user location 
+        // TODO: Default to user location
         if app.config.location.is_empty() || app.config.location == "Unknown" {
             tokio::runtime::Builder::new_multi_thread()
-                    .enable_all()
-                    .build()
-                    .unwrap()
-                    .block_on(async {
-                        let data = &(Location::get_location_data("Denver")
-                            .await
-                            .unwrap()
-                            .unwrap()[0]);
+                .enable_all()
+                .build()
+                .unwrap()
+                .block_on(async {
+                    let data = &(Location::get_location_data("Denver")
+                        .await
+                        .unwrap()
+                        .unwrap()[0]);
 
-                        app.config.location = data.display_name.clone();
-                        app.config.lon = data.lon.clone();
-                        app.config.lat = data.lat.clone();
-                    });
+                    app.config.location = data.display_name.clone();
+                    app.config.lon = data.lon.clone();
+                    app.config.lat = data.lat.clone();
+                });
         }
 
         // Do not open nav bar by default

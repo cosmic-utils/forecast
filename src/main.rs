@@ -1,14 +1,6 @@
 mod app;
-mod config;
-mod daily_view;
-mod detail_view;
-mod hourly_view;
-mod icon_cache;
-mod key_bind;
-mod localize;
-mod location;
-mod menu;
-mod weather;
+mod model;
+mod views;
 
 use cosmic::{
     app::Settings,
@@ -16,8 +8,8 @@ use cosmic::{
     Application,
 };
 
+use crate::app::config::{Config, CONFIG_VERSION};
 use crate::app::{App, Flags};
-use crate::config::{Config, CONFIG_VERSION};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let settings = Settings::default()
