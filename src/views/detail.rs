@@ -8,9 +8,10 @@ where
     Self: cosmic::Application,
 {
     pub fn view_detail_forecast(&self) -> Element<Message> {
+        let location = self.config.location.clone();
         column()
             .spacing(24)
-            .push(text::title1(self.config.location.clone()))
+            .push(text::title1(location.unwrap_or("Unknown".to_string())))
             .push(text("Detail View will appear here."))
             .into()
     }

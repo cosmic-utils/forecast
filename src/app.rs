@@ -161,7 +161,7 @@ impl cosmic::Application for App {
 
         let mut app = App {
             core,
-            nav_model: nav_model,
+            nav_model,
             key_binds: key_binds(),
             modifiers: Modifiers::empty(),
             context_page: ContextPage::Settings,
@@ -174,7 +174,7 @@ impl cosmic::Application for App {
 
         // Default location to Denver if empty
         // TODO: Default to user location
-        if app.config.location.is_empty() || app.config.location == "Unknown" {
+        if app.config.location.is_none() {
             tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
                 .build()
@@ -185,9 +185,9 @@ impl cosmic::Application for App {
                         .unwrap()
                         .unwrap()[0]);
 
-                    app.config.location = data.display_name.clone();
-                    app.config.lon = data.lon.clone();
-                    app.config.lat = data.lat.clone();
+                    app.config.location = Some(data.display_name.clone());
+                    app.config.longitude = Some(data.lon.clone());
+                    app.config.latitude = Some(data.lat.clone());
                 });
         }
 
@@ -272,6 +272,7 @@ impl cosmic::Application for App {
     }
 
     fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
+        let mut commands = vec![];
         match message {
             Message::ChangeCity => {
                 // TODO
@@ -314,7 +315,7 @@ impl cosmic::Application for App {
             }
             Message::Units(units) => {
                 self.config.units = units;
-                return self.save_config();
+                commands.push(self.save_config());
             }
             Message::DialogComplete(city) => {
                 // TODO: Add functaionality
@@ -328,12 +329,12 @@ impl cosmic::Application for App {
                             .unwrap()
                             .unwrap()[0]);
 
-                        self.config.location = data.display_name.clone();
-                        self.config.lat = data.lat.clone();
-                        self.config.lon = data.lon.clone();
+                        self.config.location = Some(data.display_name.clone());
+                        self.config.latitude = Some(data.lat.clone());
+                        self.config.longitude = Some(data.lon.clone());
                     });
 
-                self.save_config();
+                commands.push(self.save_config());
                 self.dialog_pages.pop_front();
             }
             Message::DialogCancel => {
@@ -344,7 +345,7 @@ impl cosmic::Application for App {
             }
         }
 
-        Command::none()
+        Command::batch(commands)
     }
 
     fn view(&self) -> Element<Self::Message> {
@@ -374,7 +375,7 @@ where
     Self: cosmic::Application,
 {
     fn update_title(&mut self) -> Command<Message> {
-        let window_title = format!("{}", fl!("cosmic-ext-weather"));
+        let window_title = fl!("cosmic-ext-weather").to_string();
 
         self.set_header_title(window_title.clone());
         self.set_window_title(window_title)
