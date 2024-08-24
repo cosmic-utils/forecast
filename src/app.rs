@@ -1,3 +1,6 @@
+use config::CONFIG_VERSION;
+use cosmic::cosmic_config::Update;
+use cosmic::cosmic_theme::ThemeMode;
 use cosmic::iced::keyboard::{Key, Modifiers};
 use cosmic::widget::menu::action::MenuAction;
 use cosmic::widget::menu::key_bind::KeyBind;
@@ -10,6 +13,7 @@ use cosmic::{
     widget::{column, container, nav_bar, scrollable},
     ApplicationExt, Apply, Element,
 };
+use std::any::TypeId;
 use std::collections::{HashMap, VecDeque};
 
 pub mod config;
@@ -17,8 +21,9 @@ pub mod icon_cache;
 pub mod key_bind;
 pub mod localize;
 pub mod menu;
+pub mod settings;
 
-use crate::app::config::{Config, Units};
+use crate::app::config::{Units, WeatherConfig};
 use crate::app::icon_cache::icon_cache_get;
 use crate::app::key_bind::key_binds;
 use crate::fl;
@@ -28,21 +33,24 @@ use crate::model::location::Location;
 pub enum Message {
     ChangeCity,
     Quit,
+    SystemThemeModeChange,
     ToggleContextPage(ContextPage),
     LaunchUrl(String),
     Key(Modifiers, Key),
     Modifiers(Modifiers),
-    Config(Config),
+    Config(WeatherConfig),
     Units(Units),
     DialogComplete(String),
     DialogCancel,
     DialogUpdate(DialogPage),
+    SetLocation(Location),
+    Error(String),
 }
 
 #[derive(Clone, Debug)]
 pub struct Flags {
     pub config_handler: Option<cosmic_config::Config>,
-    pub config: Config,
+    pub config: WeatherConfig,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -122,7 +130,7 @@ pub struct App {
     modifiers: Modifiers,
     context_page: ContextPage,
     config_handler: Option<cosmic_config::Config>,
-    pub config: Config,
+    pub config: WeatherConfig,
     units: Vec<String>,
     dialog_pages: VecDeque<DialogPage>,
     dialog_page_text: widget::Id,
@@ -157,6 +165,7 @@ impl cosmic::Application for App {
             }
         }
 
+        let mut commands = vec![];
         let app_units = vec![fl!("fahrenheit"), fl!("celsius")];
 
         let mut app = App {
@@ -175,28 +184,30 @@ impl cosmic::Application for App {
         // Default location to Denver if empty
         // TODO: Default to user location
         if app.config.location.is_none() {
-            tokio::runtime::Builder::new_multi_thread()
-                .enable_all()
-                .build()
-                .unwrap()
-                .block_on(async {
-                    let data = &(Location::get_location_data("Denver")
-                        .await
-                        .unwrap()
-                        .unwrap()[0]);
+            let command = Command::perform(
+                Location::get_location_data(String::from("Denver")),
+                |data| match data {
+                    Ok(data) => {
+                        let Some(data) = data.first() else {
+                            return cosmic::app::Message::App(Message::Error(
+                                "Could not get location data.".to_string(),
+                            ));
+                        };
+                        cosmic::app::Message::App(Message::SetLocation(data.clone()))
+                    }
+                    Err(err) => cosmic::app::Message::App(Message::Error(err.to_string())),
+                },
+            );
 
-                    app.config.location = Some(data.display_name.clone());
-                    app.config.longitude = Some(data.lon.clone());
-                    app.config.latitude = Some(data.lat.clone());
-                });
+            commands.push(command);
         }
 
         // Do not open nav bar by default
         app.core.nav_bar_set_toggled(false);
 
-        let command = app.update_title();
+        commands.push(app.update_title());
 
-        (app, command)
+        (app, Command::batch(commands))
     }
 
     fn nav_model(&self) -> Option<&nav_bar::Model> {
@@ -257,16 +268,51 @@ impl cosmic::Application for App {
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {
-        let subscriptions = vec![event::listen_with(|event, status| match event {
-            Event::Keyboard(KeyEvent::KeyPressed { key, modifiers, .. }) => match status {
-                event::Status::Ignored => Some(Message::Key(modifiers, key)),
-                event::Status::Captured => None,
-            },
-            Event::Keyboard(KeyEvent::ModifiersChanged(modifiers)) => {
-                Some(Message::Modifiers(modifiers))
-            }
-            _ => None,
-        })];
+        struct ConfigSubscription;
+        struct ThemeSubscription;
+
+        let subscriptions = vec![
+            event::listen_with(|event, status| match event {
+                Event::Keyboard(KeyEvent::KeyPressed { key, modifiers, .. }) => match status {
+                    event::Status::Ignored => Some(Message::Key(modifiers, key)),
+                    event::Status::Captured => None,
+                },
+                Event::Keyboard(KeyEvent::ModifiersChanged(modifiers)) => {
+                    Some(Message::Modifiers(modifiers))
+                }
+                _ => None,
+            }),
+            cosmic_config::config_subscription(
+                TypeId::of::<ConfigSubscription>(),
+                Self::APP_ID.into(),
+                CONFIG_VERSION,
+            )
+            .map(|update: Update<ThemeMode>| {
+                if !update.errors.is_empty() {
+                    log::info!(
+                        "errors loading config {:?}: {:?}",
+                        update.keys,
+                        update.errors
+                    );
+                }
+                Message::SystemThemeModeChange
+            }),
+            cosmic_config::config_subscription::<_, cosmic_theme::ThemeMode>(
+                TypeId::of::<ThemeSubscription>(),
+                cosmic_theme::THEME_MODE_ID.into(),
+                cosmic_theme::ThemeMode::version(),
+            )
+            .map(|update: Update<ThemeMode>| {
+                if !update.errors.is_empty() {
+                    log::info!(
+                        "errors loading theme mode {:?}: {:?}",
+                        update.keys,
+                        update.errors
+                    );
+                }
+                Message::SystemThemeModeChange
+            }),
+        ];
 
         Subscription::batch(subscriptions)
     }
@@ -318,23 +364,22 @@ impl cosmic::Application for App {
                 commands.push(self.save_config());
             }
             Message::DialogComplete(city) => {
-                // TODO: Add functaionality
-                tokio::runtime::Builder::new_multi_thread()
-                    .enable_all()
-                    .build()
-                    .unwrap()
-                    .block_on(async {
-                        let data = &(Location::get_location_data(city.as_str())
-                            .await
-                            .unwrap()
-                            .unwrap()[0]);
-
-                        self.config.location = Some(data.display_name.clone());
-                        self.config.latitude = Some(data.lat.clone());
-                        self.config.longitude = Some(data.lon.clone());
+                let command =
+                    Command::perform(Location::get_location_data(city), |data| match data {
+                        Ok(data) => {
+                            let Some(data) = data.first() else {
+                                return cosmic::app::Message::App(Message::Error(
+                                    "Could not get location data.".to_string(),
+                                ));
+                            };
+                            cosmic::app::Message::App(Message::SetLocation(data.clone()))
+                        }
+                        Err(err) => cosmic::app::Message::App(Message::Error(err.to_string())),
                     });
 
+                commands.push(command);
                 commands.push(self.save_config());
+
                 self.dialog_pages.pop_front();
             }
             Message::DialogCancel => {
@@ -342,6 +387,17 @@ impl cosmic::Application for App {
             }
             Message::DialogUpdate(dialog_page) => {
                 self.dialog_pages[0] = dialog_page;
+            }
+            Message::SetLocation(location) => {
+                self.config.location = Some(location.display_name.clone());
+                self.config.latitude = Some(location.lat.clone());
+                self.config.longitude = Some(location.lon.clone());
+                commands.push(self.save_config());
+            }
+            Message::Error(err) => eprintln!("Error: {}", err),
+            Message::SystemThemeModeChange => {
+                commands.push(self.save_theme());
+                commands.push(self.save_config());
             }
         }
 
@@ -389,6 +445,10 @@ where
         }
 
         Command::none()
+    }
+
+    fn save_theme(&self) -> Command<Message> {
+        cosmic::app::command::set_theme(self.config.app_theme.theme())
     }
 
     fn about(&self) -> Element<Message> {

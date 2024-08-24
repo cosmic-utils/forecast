@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Location {
     place_id: u64,
     licence: String,
@@ -14,7 +14,7 @@ pub struct Location {
 }
 
 impl Location {
-    pub async fn get_location_data(query: &str) -> Result<Option<Vec<Location>>, reqwest::Error> {
+    pub async fn get_location_data(query: String) -> Result<Vec<Location>, reqwest::Error> {
         let params = [("q", query)];
 
         let geocoding_ans: Vec<Location> = reqwest::Client::new()
@@ -25,10 +25,7 @@ impl Location {
             .json()
             .await?;
 
-        match geocoding_ans.len() {
-            0 => Ok(None),
-            _ => Ok(Some(geocoding_ans)),
-        }
+        Ok(geocoding_ans)
     }
 
     pub fn get_coordinates(data: &Location) -> (f64, f64) {
