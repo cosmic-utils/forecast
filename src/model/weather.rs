@@ -86,4 +86,25 @@ pub struct Properties {
 pub struct WeatherData {
     pub r#type: String,
     pub geometry: Geometry,
+    pub properties: Properties,
+}
+
+impl WeatherData {
+    pub async fn get_weather_data(coords: (f64, f64)) -> Result<Option<WeatherData>, reqwest::Error> {
+        let query_params = [
+            ("lat", coords.0),
+            ("lon", coords.1)
+        ];
+
+        let weather_ans: WeatherData = reqwest::Client::new()
+            .get("https://api.met.no/weatherapi/locationforecast/2.0/compact?")
+            .header("User-Agent", "Weather-Cli/0.0.1")
+            .query(&query_params)
+            .send()
+            .await?
+            .json()
+            .await?;
+
+        Ok(Some(weather_ans))
+    }
 }

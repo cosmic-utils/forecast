@@ -28,6 +28,7 @@ use crate::app::icon_cache::icon_cache_get;
 use crate::app::key_bind::key_binds;
 use crate::fl;
 use crate::model::location::Location;
+use crate::model::weather::WeatherData;
 
 #[derive(Clone, Debug)]
 pub enum Message {
