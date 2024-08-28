@@ -46,6 +46,7 @@ pub enum Message {
     DialogCancel,
     DialogUpdate(DialogPage),
     SetLocation(Location),
+    SetWeatherData(WeatherData),
     Error(String),
 }
 
@@ -133,6 +134,7 @@ pub struct App {
     context_page: ContextPage,
     config_handler: Option<cosmic_config::Config>,
     pub config: WeatherConfig,
+    pub weather_data: WeatherData,
     units: Vec<String>,
     app_themes: Vec<String>,
     dialog_pages: VecDeque<DialogPage>,
@@ -180,6 +182,7 @@ impl cosmic::Application for App {
             context_page: ContextPage::Settings,
             config_handler: flags.config_handler,
             config: flags.config,
+            weather_data: WeatherData::default(),
             units: app_units,
             app_themes,
             dialog_pages: VecDeque::new(),
@@ -211,6 +214,7 @@ impl cosmic::Application for App {
         app.core.nav_bar_set_toggled(false);
 
         commands.push(app.update_title());
+        commands.push(app.update_weather_data());
 
         (app, Command::batch(commands))
     }
@@ -403,6 +407,10 @@ impl cosmic::Application for App {
                 self.config.latitude = Some(location.lat.clone());
                 self.config.longitude = Some(location.lon.clone());
                 commands.push(self.save_config());
+                commands.push(self.update_weather_data());
+            }
+            Message::SetWeatherData(data) => {
+                self.weather_data = data;
             }
             Message::Error(err) => eprintln!("Error: {}", err),
             Message::SystemThemeModeChange => {
@@ -459,6 +467,30 @@ where
 
     fn save_theme(&self) -> Command<Message> {
         cosmic::app::command::set_theme(self.config.app_theme.theme())
+    }
+
+    fn update_weather_data(&self) -> Command<Message> {
+
+        let coords = (
+            self.config.latitude.as_ref().unwrap().parse::<f64>().expect("Error parsing string to f64"),
+            self.config.longitude.as_ref().unwrap().parse::<f64>().expect("Error parsing string to f64")
+        );
+
+        let command = Command::perform(WeatherData::get_weather_data(coords),
+            |data| match data {
+                Ok(data) => {
+                    let Some(data) = data else {
+                        return cosmic::app::Message::App(Message::Error(
+                            "Could not get weather data.".to_string(),
+                        ));
+                    };
+                    cosmic::app::Message::App(Message::SetWeatherData(data.clone()))
+                }
+                Err(err) => cosmic::app::Message::App(Message::Error(err.to_string())),
+            }
+        );
+
+        command
     }
 
     fn about(&self) -> Element<Message> {
