@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use cosmic::widget::{column, text};
 use cosmic::Element;
 
@@ -8,20 +9,28 @@ where
     Self: cosmic::Application,
 {
     pub fn view_hourly_forecast(&self) -> Element<Message> {
+        let current_time = DateTime::<Utc>::from(Utc::now());
         let location = self.config.location.clone();
-        let data = &self.weather_data.properties.timeseries;
-        let imediate_data = if data.len() == 0 {
+
+        let data_now = &self
+            .weather_data
+            .properties
+            .timeseries
+            .iter()
+            .min_by_key(|timeseries| (timeseries.time - current_time).num_seconds().abs());
+
+        let temp_now = if data_now.is_some() {
+            data_now.unwrap().data.instant.details.air_temperature.unwrap()
+        } else {
             // View is initalized before weather_data is loaded
             // Need to pass dummy data to prevent crashing
             0 as f64
-        } else {
-            data[0].data.instant.details.air_temperature.unwrap()
         };
 
         column()
             .spacing(24)
             .push(text::title1(location.unwrap_or("Unknown".to_string())))
-            .push(text(format!("{} degrees", imediate_data)))
+            .push(text(format!("{} degrees", temp_now)))
             .into()
     }
 }
