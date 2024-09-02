@@ -7,6 +7,7 @@ use cosmic::widget;
 use cosmic::Element;
 
 use crate::app::{App, Message};
+use crate::app::config::Units;
 use crate::model::weather::WeatherData;
 
 impl App
@@ -52,7 +53,7 @@ where
                         }))
                         .push_maybe(ts.data.instant.details.air_temperature.map(
                             |air_temperature| {
-                                widget::text(format!("{}°", air_temperature))
+                                widget::text(format!("{}°", self.set_temp_units(air_temperature)))
                                     .size(24)
                                     .style(cosmic::style::Text::Accent)
                             },
@@ -81,7 +82,7 @@ where
                             )
                             .push_maybe(data.instant.details.air_temperature.map(
                                 |air_temperature| {
-                                    widget::text(format!("{}°", air_temperature))
+                                    widget::text(format!("{}°", self.set_temp_units(air_temperature)))
                                         .size(42)
                                         .style(cosmic::style::Text::Accent)
                                 },
@@ -98,5 +99,12 @@ where
             ));
 
         column.into()
+    }
+
+    fn set_temp_units(&self, temp: f64) -> i64 {
+        match self.config.units {
+            Units::Fahrenheit => {((temp * (9 as f64 / 5 as f64)) + 32 as f64) as i64},
+            Units::Celsius => temp as i64,
+        }
     }
 }
