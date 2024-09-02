@@ -470,27 +470,32 @@ where
     }
 
     fn update_weather_data(&self) -> Command<Message> {
-
         let coords = (
-            self.config.latitude.as_ref().unwrap().parse::<f64>().expect("Error parsing string to f64"),
-            self.config.longitude.as_ref().unwrap().parse::<f64>().expect("Error parsing string to f64")
+            self.config
+                .latitude
+                .as_ref()
+                .unwrap()
+                .parse::<f64>()
+                .expect("Error parsing string to f64"),
+            self.config
+                .longitude
+                .as_ref()
+                .unwrap()
+                .parse::<f64>()
+                .expect("Error parsing string to f64"),
         );
 
-        let command = Command::perform(WeatherData::get_weather_data(coords),
-            |data| match data {
-                Ok(data) => {
-                    let Some(data) = data else {
-                        return cosmic::app::Message::App(Message::Error(
-                            "Could not get weather data.".to_string(),
-                        ));
-                    };
-                    cosmic::app::Message::App(Message::SetWeatherData(data.clone()))
-                }
-                Err(err) => cosmic::app::Message::App(Message::Error(err.to_string())),
+        Command::perform(WeatherData::get_weather_data(coords), |data| match data {
+            Ok(data) => {
+                let Some(data) = data else {
+                    return cosmic::app::Message::App(Message::Error(
+                        "Could not get weather data.".to_string(),
+                    ));
+                };
+                cosmic::app::Message::App(Message::SetWeatherData(data.clone()))
             }
-        );
-
-        command
+            Err(err) => cosmic::app::Message::App(Message::Error(err.to_string())),
+        })
     }
 
     fn about(&self) -> Element<Message> {

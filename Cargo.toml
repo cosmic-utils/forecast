@@ -14,15 +14,16 @@ i18n-embed = { version = "0.14", features = [
 ] }
 i18n-embed-fl = "0.7"
 rust-embed = "8"
-once_cell = "1.19.0"
 reqwest = { version = "0.12.3", features = ["json"] }
-tokio = "1.37.0"
-chrono = { version = "0.4.38", features = ["serde"]}
+tokio = { version = "1.37.0", features = ["fs"] }
+chrono = { version = "0.4.38", features = ["serde"] }
+bytes = "1.7.1"
+include_dir = "0.7.4"
 
 [dependencies.libcosmic]
 git = "https://github.com/pop-os/libcosmic"
 default-features = false
-features = ["debug", "winit", "wgpu", "tokio"]
+features = ["debug", "winit", "wgpu", "tokio", "image"]
 
 [build-dependencies]
 vergen = { version = "8", features = ["git", "gitcl"] }

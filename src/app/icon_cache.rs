@@ -1,8 +1,11 @@
 use cosmic::widget::icon;
+use include_dir::{include_dir, Dir};
 use std::{
     collections::HashMap,
     sync::{Mutex, OnceLock},
 };
+
+pub static WEATHER_ICONS: Dir = include_dir!("res/icons/bundled/weather");
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub struct IconCacheKey {
@@ -17,7 +20,6 @@ pub struct IconCache {
 impl IconCache {
     pub fn new() -> Self {
         let mut cache = HashMap::new();
-
         macro_rules! bundle {
             ($name:expr, $size:expr) => {
                 let data: &'static [u8] =
