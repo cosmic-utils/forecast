@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Weather
+Exec=cosmic-ext-weather %F
+Terminal=false
+Type=Application
+StartupNotify=true
+Icon=com.jwestall.CosmicWeather
+Categories=COSMIC;Utility;
+Keywords=Folder;Manager;
+MimeType=inode/directory;

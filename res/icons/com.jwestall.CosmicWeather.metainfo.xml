@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>com.jwestall.CosmicWeather</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-only</project_license>
+  <project_group>COSMIC</project_group>
+  <developer_name>Jacob Westall</developer_name>
+  <update_contact>jacob@jwestall.com</update_contact>
+  <url type="homepage">https://github.com/jwestall/cosmic-weather</url>
+  <url type="bugtracker">https://github.com/jwestall/cosmic-weather/issues</url>
+  <name>Weather</name>
+  <summary>A simple weather application for the COSMIC™ Desktop</summary>
+  <description>
+    <p>A simple weather application for the COSMIC™ Desktop</p>
+  </description>
+  <launchable type="desktop-id">com.jwestall.CosmicWeather.desktop</launchable>
+  <icon type="remote" height="256" width="256">https://raw.githubusercontent.com/jwestall/cosmic-weather/main/res/icons/hicolor/scalable/apps/com.jwestall.Weather.svg</icon>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/jwestall/cosmic-weather/main/screenshots/window.png</image>
+      <caption>Light mode</caption>
+    </screenshot>
+  </screenshots>
+  <provides>
+    <mimetypes>
+      <mimetype>text/plain</mimetype>
+    </mimetypes>
+    <binaries>
+      <binary>cosmic-ext-weather</binary>
+    </binaries>
+  </provides>
+</component>
