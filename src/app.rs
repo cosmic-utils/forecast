@@ -1,4 +1,4 @@
-use config::{AppTheme, CONFIG_VERSION};
+use config::{AppTheme, TimeFmt, CONFIG_VERSION};
 use cosmic::cosmic_config::Update;
 use cosmic::cosmic_theme::ThemeMode;
 use cosmic::iced::keyboard::{Key, Modifiers};
@@ -41,6 +41,7 @@ pub enum Message {
     Modifiers(Modifiers),
     Config(WeatherConfig),
     Units(Units),
+    TimeFmt(TimeFmt),
     AppTheme(AppTheme),
     DialogComplete(String),
     DialogCancel,
@@ -136,6 +137,7 @@ pub struct App {
     pub config: WeatherConfig,
     pub weather_data: WeatherData,
     units: Vec<String>,
+    timefmt: Vec<String>,
     app_themes: Vec<String>,
     dialog_pages: VecDeque<DialogPage>,
     dialog_page_text: widget::Id,
@@ -172,6 +174,7 @@ impl cosmic::Application for App {
 
         let mut commands = vec![];
         let app_units = vec![fl!("fahrenheit"), fl!("celsius")];
+        let app_timefmt = vec![fl!("twelve-hr"), fl!("twenty-four-hr")];
         let app_themes = vec![fl!("light"), fl!("dark"), fl!("system")];
 
         let mut app = App {
@@ -184,6 +187,7 @@ impl cosmic::Application for App {
             config: flags.config,
             weather_data: WeatherData::default(),
             units: app_units,
+            timefmt: app_timefmt,
             app_themes,
             dialog_pages: VecDeque::new(),
             dialog_page_text: widget::Id::unique(),
@@ -372,6 +376,10 @@ impl cosmic::Application for App {
                 self.config.units = units;
                 commands.push(self.save_config());
             }
+            Message::TimeFmt(timefmt) => {
+                self.config.timefmt = timefmt;
+                commands.push(self.save_config());
+            }
             Message::AppTheme(theme) => {
                 self.config.app_theme = theme;
                 commands.push(self.save_config());
@@ -535,6 +543,11 @@ where
             Units::Celsius => 1,
         };
 
+        let selected_timefmt = match self.config.timefmt {
+            TimeFmt::TwelveHr => 0,
+            TimeFmt::TwentyFourHr => 1,
+        };
+
         let selected_theme = match self.config.app_theme {
             config::AppTheme::Light => 0,
             config::AppTheme::Dark => 1,
@@ -551,6 +564,18 @@ where
                             Message::Units(match index {
                                 1 => Units::Celsius,
                                 _ => Units::Fahrenheit,
+                            })
+                        },
+                    )),
+                )
+                .add(
+                    widget::settings::item::builder(fl!("time-format")).control(widget::dropdown(
+                        &self.timefmt,
+                        Some(selected_timefmt),
+                        move |index| {
+                            Message::TimeFmt(match index {
+                                1 => TimeFmt::TwentyFourHr,
+                                _ => TimeFmt::TwelveHr,
                             })
                         },
                     )),

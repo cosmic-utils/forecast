@@ -1,13 +1,17 @@
 use chrono::Local;
+use cosmic::iced::alignment::Vertical;
 use cosmic::iced::Alignment;
+use cosmic::iced::Length;
 use cosmic::iced_widget::scrollable::Direction;
 use cosmic::iced_widget::scrollable::Properties;
 use cosmic::prelude::CollectionWidget;
 use cosmic::widget;
 use cosmic::Element;
 
+use crate::app::config::TimeFmt;
 use crate::app::{App, Message};
 use crate::app::config::Units;
+use crate::model::weather::Timeseries;
 use crate::model::weather::WeatherData;
 
 impl App
@@ -27,13 +31,26 @@ where
             .map(|ts| ts.data.clone())
             .unwrap_or_default();
 
-        let last_updated = self
-            .weather_data
-            .properties
-            .meta
-            .updated_at
-            .format("%H:%M")
-            .to_string();
+        let last_updated = match self.config.timefmt {
+            TimeFmt::TwelveHr => {
+                self
+                .weather_data
+                .properties
+                .meta
+                .updated_at
+                .format("%_I:%M %p")
+                .to_string()
+            }
+            TimeFmt::TwentyFourHr => {
+                self
+                .weather_data
+                .properties
+                .meta
+                .updated_at
+                .format("%_H:%M")
+                .to_string()
+            }
+        };
 
         let timeseries: Vec<Element<Message>> =
             self.weather_data
@@ -46,7 +63,7 @@ where
                         .align_items(Alignment::Center)
                         .padding(spacing.space_xs)
                         .spacing(spacing.space_xs)
-                        .push(widget::text(ts.time.format("%H:%M").to_string()))
+                        .push(widget::text(self.format_time(ts)))
                         .push_maybe(ts.data.next_1_hours.as_ref().map(|next_1_hours| {
                             let symbol = next_1_hours.summary.symbol_code.clone();
                             widget::icon(WeatherData::icon_handle(symbol)).size(50)
@@ -105,6 +122,13 @@ where
         match self.config.units {
             Units::Fahrenheit => {((temp * (9 as f64 / 5 as f64)) + 32 as f64) as i64},
             Units::Celsius => temp as i64,
+        }
+    }
+
+    fn format_time(&self, ts: &Timeseries) -> String {
+        match self.config.timefmt {
+            TimeFmt::TwelveHr => ts.time.format("%_I:%M %p").to_string(),
+            TimeFmt::TwentyFourHr => ts.time.format("%_H:%M").to_string()
         }
     }
 }

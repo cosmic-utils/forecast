@@ -5,6 +5,10 @@ app-under-construction = App is under construction!
 fahrenheit = Fahrenheit
 celsius = Celsius
 
+# Time Settings
+twelve-hr = Twelve Hour
+twenty-four-hr = Twenty Four Hour
+
 # Context Pages
 
 ## About
@@ -17,6 +21,7 @@ general = General
 appearance = Appearance
 theme = Theme
 units = Units
+time-format = Time Format
 
 ## App Themes
 dark = Dark
