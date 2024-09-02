@@ -1,7 +1,5 @@
 use chrono::Local;
-use cosmic::iced::alignment::Vertical;
 use cosmic::iced::Alignment;
-use cosmic::iced::Length;
 use cosmic::iced_widget::scrollable::Direction;
 use cosmic::iced_widget::scrollable::Properties;
 use cosmic::prelude::CollectionWidget;

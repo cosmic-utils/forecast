@@ -27,15 +27,4 @@ impl Location {
 
         Ok(geocoding_ans)
     }
-
-    pub fn get_coordinates(data: &Location) -> (f64, f64) {
-        (
-            data.lat.parse::<f64>().unwrap(),
-            data.lon.parse::<f64>().unwrap(),
-        )
-    }
-
-    pub fn get_display_name(data: &Location) -> String {
-        data.display_name.clone()
-    }
 }
