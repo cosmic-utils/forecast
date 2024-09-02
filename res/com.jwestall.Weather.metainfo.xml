@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>com.jwestall.CosmicWeather</id>
+  <id>com.jwestall.Weather</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-only</project_license>
   <project_group>COSMIC</project_group>
@@ -13,7 +13,7 @@
   <description>
     <p>A simple weather application for the COSMIC™ Desktop</p>
   </description>
-  <launchable type="desktop-id">com.jwestall.CosmicWeather.desktop</launchable>
+  <launchable type="desktop-id">com.jwestall.Weather.desktop</launchable>
   <icon type="remote" height="256" width="256">https://raw.githubusercontent.com/jwestall/cosmic-weather/main/res/icons/hicolor/scalable/apps/com.jwestall.Weather.svg</icon>
   <screenshots>
     <screenshot type="default">
