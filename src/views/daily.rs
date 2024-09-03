@@ -51,8 +51,8 @@ where
             .push(
                 widget::row()
                     .spacing(spacing.space_m)
-                    .push_maybe(data.next_12_hours.as_ref().map(|next_12_hours| {
-                        let symbol = next_12_hours.summary.symbol_code.clone();
+                    .push_maybe(data.next_1_hours.as_ref().map(|next_1_hours| {
+                        let symbol = next_1_hours.summary.symbol_code.clone();
                         widget::icon(WeatherData::icon_handle(symbol)).size(150)
                     }))
                     .push(
