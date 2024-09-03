@@ -429,6 +429,8 @@ impl cosmic::Application for App {
                 self.config.longitude = Some(location.lon.clone());
                 commands.push(self.save_config());
                 commands.push(self.update_weather_data());
+
+                self.dialog_pages.pop_front();
             }
             Message::SetWeatherData(data) => {
                 self.weather_data = data;
