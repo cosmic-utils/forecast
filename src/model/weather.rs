@@ -14,6 +14,8 @@ pub struct Geometry {
 pub struct Units {
     pub air_pressure_at_sea_level: Option<String>,
     pub air_temperature: Option<String>,
+    pub air_temperature_max: Option<String>,
+    pub air_temperature_min: Option<String>,
     pub cloud_area_fraction: Option<String>,
     pub precipitation_amount: Option<String>,
     pub relative_humidity: Option<String>,
@@ -31,6 +33,8 @@ pub struct Meta {
 pub struct Details {
     pub air_pressure_at_sea_level: Option<f64>,
     pub air_temperature: Option<f64>,
+    pub air_temperature_max	: Option<f64>,
+    pub air_temperature_min: Option<f64>,
     pub cloud_area_fraction: Option<f64>,
     pub relative_humidity: Option<f64>,
     pub wind_from_direction: Option<f64>,
@@ -99,8 +103,8 @@ impl WeatherData {
         let query_params = [("lat", coords.0), ("lon", coords.1)];
 
         let weather_ans: WeatherData = reqwest::Client::new()
-            .get("https://api.met.no/weatherapi/locationforecast/2.0/compact?")
-            .header("User-Agent", "Weather-Cli/0.0.1")
+            .get("https://api.met.no/weatherapi/locationforecast/2.0/complete?")
+            .header("User-Agent", "Cosmic-Ext-Weather/0.1.0")
             .query(&query_params)
             .send()
             .await?
