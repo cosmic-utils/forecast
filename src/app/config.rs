@@ -20,6 +20,14 @@ pub enum TimeFmt {
     TwentyFourHr,
 }
 
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, Serialize)]
+pub enum PressureUnits {
+    Hectopascal,
+    Bar,
+    Kilopascal,
+    Psi,
+}
+
 #[derive(Clone, CosmicConfigEntry, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct WeatherConfig {
     pub location: Option<String>,
@@ -27,6 +35,7 @@ pub struct WeatherConfig {
     pub longitude: Option<String>,
     pub units: Units,
     pub timefmt: TimeFmt,
+    pub pressure_units: PressureUnits,
     pub app_theme: AppTheme,
 }
 
@@ -38,6 +47,7 @@ impl Default for WeatherConfig {
             longitude: None,
             units: Units::Fahrenheit,
             timefmt: TimeFmt::TwelveHr,
+            pressure_units: PressureUnits::Hectopascal,
             app_theme: AppTheme::System,
         }
     }

@@ -1,4 +1,4 @@
-use config::{AppTheme, TimeFmt, CONFIG_VERSION};
+use config::{AppTheme, PressureUnits, TimeFmt, CONFIG_VERSION};
 use cosmic::cosmic_config::Update;
 use cosmic::cosmic_theme::ThemeMode;
 use cosmic::iced::keyboard::{Key, Modifiers};
@@ -42,6 +42,7 @@ pub enum Message {
     Config(WeatherConfig),
     Units(Units),
     TimeFmt(TimeFmt),
+    PressureUnits(PressureUnits),
     AppTheme(AppTheme),
     DialogComplete(String),
     DialogCancel,
@@ -140,6 +141,7 @@ pub struct App {
     app_locations: Vec<Location>,
     units: Vec<String>,
     timefmt: Vec<String>,
+    pressure_units: Vec<String>,
     app_themes: Vec<String>,
     dialog_pages: VecDeque<DialogPage>,
     dialog_page_text: widget::Id,
@@ -177,6 +179,7 @@ impl cosmic::Application for App {
         let mut commands = vec![];
         let app_units = vec![fl!("fahrenheit"), fl!("celsius")];
         let app_timefmt = vec![fl!("twelve-hr"), fl!("twenty-four-hr")];
+        let app_pressure_units = vec!["hPa".to_string(), "bar".to_string(), "kPa".to_string(), "psi".to_string()];
         let app_themes = vec![fl!("light"), fl!("dark"), fl!("system")];
 
         let mut app = App {
@@ -191,6 +194,7 @@ impl cosmic::Application for App {
             app_locations: Vec::new(),
             units: app_units,
             timefmt: app_timefmt,
+            pressure_units: app_pressure_units,
             app_themes,
             dialog_pages: VecDeque::new(),
             dialog_page_text: widget::Id::unique(),
@@ -399,6 +403,10 @@ impl cosmic::Application for App {
                 self.config.timefmt = timefmt;
                 commands.push(self.save_config());
             }
+            Message::PressureUnits(units) => {
+                self.config.pressure_units = units;
+                commands.push(self.save_config());
+            }
             Message::AppTheme(theme) => {
                 self.config.app_theme = theme;
                 commands.push(self.save_config());
@@ -560,6 +568,13 @@ where
             TimeFmt::TwentyFourHr => 1,
         };
 
+        let selected_pressure_units = match self.config.pressure_units {
+            PressureUnits::Hectopascal => 0,
+            PressureUnits::Bar => 1,
+            PressureUnits::Kilopascal => 2,
+            PressureUnits::Psi => 3,
+        };
+
         let selected_theme = match self.config.app_theme {
             config::AppTheme::Light => 0,
             config::AppTheme::Dark => 1,
@@ -588,6 +603,20 @@ where
                             Message::TimeFmt(match index {
                                 1 => TimeFmt::TwentyFourHr,
                                 _ => TimeFmt::TwelveHr,
+                            })
+                        },
+                    )),
+                )
+                .add(
+                    widget::settings::item::builder("Pressure Units".to_string()).control(widget::dropdown(
+                        &self.pressure_units,
+                        Some(selected_pressure_units),
+                        move |index| {
+                            Message::PressureUnits(match index {
+                                1 => PressureUnits::Bar,
+                                2 => PressureUnits::Kilopascal,
+                                3 => PressureUnits::Psi,
+                                _ => PressureUnits::Hectopascal,
                             })
                         },
                     )),

@@ -5,6 +5,7 @@ use cosmic::prelude::CollectionWidget;
 use cosmic::widget;
 use cosmic::Element;
 
+use crate::app::config::PressureUnits;
 use crate::app::config::TimeFmt;
 use crate::app::{App, Message};
 use crate::model::weather::WeatherData;
@@ -47,6 +48,13 @@ where
             }
         };
 
+        let pressure_units = match self.config.pressure_units {
+            PressureUnits::Hectopascal => "hPa".to_string(),
+            PressureUnits::Bar => "bar".to_string(),
+            PressureUnits::Kilopascal => "kPa".to_string(),
+            PressureUnits::Psi => "psi".to_string(),
+        };
+
         let column = widget::column()
             .padding(spacing.space_xs)
             .spacing(spacing.space_xs)
@@ -83,7 +91,7 @@ where
                         )
                         .push_maybe(data.instant.details.air_pressure_at_sea_level.map(
                             |air_pressure| {
-                                widget::text(format!("{}", air_pressure))
+                                widget::text(format!("{:.1} {}", self.calculate_pressure_units(air_pressure), pressure_units))
                                     .width(Length::Fill)
                                     .horizontal_alignment(Horizontal::Right)
                             }
@@ -96,7 +104,7 @@ where
                         )
                         .push_maybe(data.instant.details.cloud_area_fraction.map(
                             |cloud_area| {
-                                widget::text(format!("{}", cloud_area))
+                                widget::text(format!("{} %", cloud_area))
                                     .width(Length::Fill)
                                     .horizontal_alignment(Horizontal::Right)
                             }
@@ -109,7 +117,7 @@ where
                         )
                         .push_maybe(data.instant.details.relative_humidity.map(
                             |relative_humidity| {
-                                widget::text(format!("{}", relative_humidity))
+                                widget::text(format!("{} %", relative_humidity))
                                     .width(Length::Fill)
                                     .horizontal_alignment(Horizontal::Right)
                             }
@@ -122,7 +130,7 @@ where
                         )
                         .push_maybe(data.instant.details.wind_from_direction.map(
                             |wind_direction| {
-                                widget::text(format!("{}", wind_direction))
+                                widget::text(format!("{} °", wind_direction))
                                     .width(Length::Fill)
                                     .horizontal_alignment(Horizontal::Right)
                             }
@@ -149,5 +157,14 @@ where
             ));
 
         column.into()
+    }
+
+    fn calculate_pressure_units(&self, value: f64) -> f64 {
+        match self.config.pressure_units {
+            PressureUnits::Hectopascal => value,
+            PressureUnits::Bar => value * 0.001 as f64,
+            PressureUnits::Kilopascal => value * 0.1 as f64,
+            PressureUnits::Psi => value * 0.0145037738 as f64,
+        }
     }
 }
