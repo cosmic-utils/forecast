@@ -6,8 +6,8 @@ fahrenheit = Fahrenheit
 celsius = Celsius
 
 # Time Settings
-twelve-hr = Twelve Hour
-twenty-four-hr = Twenty Four Hour
+twelve-hr = 12-hour
+twenty-four-hr  = 24-hour
 
 # Context Pages
 
