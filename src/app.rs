@@ -478,19 +478,16 @@ where
     }
 
     fn update_weather_data(&self) -> Command<Message> {
+        let (Some(lat), Some(long)) = (
+            self.config.latitude.as_ref(),
+            self.config.longitude.as_ref(),
+        ) else {
+            return Command::none();
+        };
+        
         let coords = (
-            self.config
-                .latitude
-                .as_ref()
-                .unwrap()
-                .parse::<f64>()
-                .expect("Error parsing string to f64"),
-            self.config
-                .longitude
-                .as_ref()
-                .unwrap()
-                .parse::<f64>()
-                .expect("Error parsing string to f64"),
+            lat.parse::<f64>().expect("Error parsing string to f64"),
+            long.parse::<f64>().expect("Error parsing string to f64"),
         );
 
         Command::perform(WeatherData::get_weather_data(coords), |data| match data {
