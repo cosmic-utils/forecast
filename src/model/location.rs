@@ -1,3 +1,5 @@
+use std::convert::AsRef;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -11,6 +13,12 @@ pub struct Location {
     class: String,
     r#type: String,
     importance: f64,
+}
+
+impl AsRef<str> for Location {
+    fn as_ref(&self) -> &str {
+        &self.display_name
+    }
 }
 
 impl Location {

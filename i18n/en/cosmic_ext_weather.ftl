@@ -31,6 +31,7 @@ system = Match desktop
 # Dialog Page
 change-city = Change City
 save = Save
+search = Search
 cancel = Cancel
 dummy-dialog = Dummy Dialog
 search = Search

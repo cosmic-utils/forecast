@@ -46,6 +46,7 @@ pub enum Message {
     DialogComplete(String),
     DialogCancel,
     DialogUpdate(DialogPage),
+    UpdateLocations(Vec<Location>),
     SetLocation(Location),
     SetWeatherData(WeatherData),
     Error(String),
@@ -136,6 +137,7 @@ pub struct App {
     config_handler: Option<cosmic_config::Config>,
     pub config: WeatherConfig,
     pub weather_data: WeatherData,
+    app_locations: Vec<Location>,
     units: Vec<String>,
     timefmt: Vec<String>,
     app_themes: Vec<String>,
@@ -186,6 +188,7 @@ impl cosmic::Application for App {
             config_handler: flags.config_handler,
             config: flags.config,
             weather_data: WeatherData::default(),
+            app_locations: Vec::new(),
             units: app_units,
             timefmt: app_timefmt,
             app_themes,
@@ -247,24 +250,40 @@ impl cosmic::Application for App {
         let cosmic_theme::Spacing { space_xxs, .. } = theme::active().cosmic().spacing;
 
         let dialog = match dialog_page {
-            DialogPage::Change(city) => widget::dialog(fl!("change-city"))
-                .primary_action(
-                    widget::button::suggested(fl!("save"))
-                        .on_press_maybe(Some(Message::DialogComplete(city.to_string()))),
-                )
-                .secondary_action(
-                    widget::button::standard(fl!("cancel")).on_press(Message::DialogCancel),
-                )
-                .control(
-                    widget::column::with_children(vec![widget::text_input(
-                        fl!("search"),
-                        city.as_str(),
+            DialogPage::Change(city) => {
+                let mut content = widget::column().spacing(space_xxs).push(
+                    widget::text_input(fl!("search"), city.as_str())
+                        .id(self.dialog_page_text.clone())
+                        .on_input(move |city| Message::DialogUpdate(DialogPage::Change(city))),
+                );
+
+                if !self.app_locations.is_empty() {
+                    let mut locations_btns = widget::column();
+
+                    for location in self.app_locations.iter() {
+                        locations_btns = locations_btns.push(
+                            widget::button(location.as_ref())
+                                .width(Length::Fill)
+                                .on_press(Message::SetLocation(location.clone()))
+                                .style(theme::Button::Link),
+                        );
+                    }
+
+                    content = content.push(
+                        widget::container(widget::scrollable(locations_btns)).max_height(200),
+                    );
+                }
+
+                widget::dialog(fl!("change-city"))
+                    .primary_action(
+                        widget::button::suggested(fl!("search"))
+                            .on_press(Message::DialogComplete(city.to_string())),
                     )
-                    .id(self.dialog_page_text.clone())
-                    .on_input(move |city| Message::DialogUpdate(DialogPage::Change(city)))
-                    .into()])
-                    .spacing(space_xxs),
-                ),
+                    .secondary_action(
+                        widget::button::standard(fl!("cancel")).on_press(Message::DialogCancel),
+                    )
+                    .control(content)
+            }
         };
 
         Some(dialog.into())
@@ -388,21 +407,12 @@ impl cosmic::Application for App {
             Message::DialogComplete(city) => {
                 let command =
                     Command::perform(Location::get_location_data(city), |data| match data {
-                        Ok(data) => {
-                            let Some(data) = data.first() else {
-                                return cosmic::app::Message::App(Message::Error(
-                                    "Could not get location data.".to_string(),
-                                ));
-                            };
-                            cosmic::app::Message::App(Message::SetLocation(data.clone()))
-                        }
+                        Ok(data) => cosmic::app::Message::App(Message::UpdateLocations(data)),
                         Err(err) => cosmic::app::Message::App(Message::Error(err.to_string())),
                     });
 
                 commands.push(command);
                 commands.push(self.save_config());
-
-                self.dialog_pages.pop_front();
             }
             Message::DialogCancel => {
                 self.dialog_pages.pop_front();
@@ -410,12 +420,17 @@ impl cosmic::Application for App {
             Message::DialogUpdate(dialog_page) => {
                 self.dialog_pages[0] = dialog_page;
             }
+            Message::UpdateLocations(locations) => {
+                self.app_locations = locations;
+            }
             Message::SetLocation(location) => {
                 self.config.location = Some(location.display_name.clone());
                 self.config.latitude = Some(location.lat.clone());
                 self.config.longitude = Some(location.lon.clone());
                 commands.push(self.save_config());
                 commands.push(self.update_weather_data());
+
+                self.dialog_pages.pop_front();
             }
             Message::SetWeatherData(data) => {
                 self.weather_data = data;
@@ -484,7 +499,7 @@ where
         ) else {
             return Command::none();
         };
-        
+
         let coords = (
             lat.parse::<f64>().expect("Error parsing string to f64"),
             long.parse::<f64>().expect("Error parsing string to f64"),
