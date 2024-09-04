@@ -181,8 +181,13 @@ impl cosmic::Application for App {
         let mut commands = vec![];
         let app_units = vec![fl!("fahrenheit"), fl!("celsius")];
         let app_timefmt = vec![fl!("twelve-hr"), fl!("twenty-four-hr")];
-        let app_pressure_units = vec!["hPa".to_string(), "bar".to_string(), "kPa".to_string(), "psi".to_string()];
-        let app_speed_units = vec!["m/s".to_string(), "mph".to_string()];
+        let app_pressure_units = vec![
+            "hPa".to_string(),
+            "bar".to_string(),
+            "kPa".to_string(),
+            "psi".to_string(),
+        ];
+        let app_speed_units = vec!["m/s".to_string(), "mph".to_string(), "km/h".to_string()];
         let app_themes = vec![fl!("light"), fl!("dark"), fl!("system")];
 
         let mut app = App {
@@ -586,6 +591,7 @@ where
         let selected_speed_units = match self.config.speed_units {
             SpeedUnits::MetersPerSecond => 0,
             SpeedUnits::MilesPerHour => 1,
+            SpeedUnits::KilometresPerHour => 2,
         };
 
         let selected_theme = match self.config.app_theme {
@@ -621,30 +627,35 @@ where
                     )),
                 )
                 .add(
-                    widget::settings::item::builder("Pressure Units".to_string()).control(widget::dropdown(
-                        &self.pressure_units,
-                        Some(selected_pressure_units),
-                        move |index| {
-                            Message::PressureUnits(match index {
-                                1 => PressureUnits::Bar,
-                                2 => PressureUnits::Kilopascal,
-                                3 => PressureUnits::Psi,
-                                _ => PressureUnits::Hectopascal,
-                            })
-                        },
-                    )),
+                    widget::settings::item::builder("Pressure Units".to_string()).control(
+                        widget::dropdown(
+                            &self.pressure_units,
+                            Some(selected_pressure_units),
+                            move |index| {
+                                Message::PressureUnits(match index {
+                                    1 => PressureUnits::Bar,
+                                    2 => PressureUnits::Kilopascal,
+                                    3 => PressureUnits::Psi,
+                                    _ => PressureUnits::Hectopascal,
+                                })
+                            },
+                        ),
+                    ),
                 )
                 .add(
-                    widget::settings::item::builder("Speed Units".to_string()).control(widget::dropdown(
-                        &self.speed_units,
-                        Some(selected_speed_units),
-                        move |index| {
-                            Message::SpeedUnits(match index {
-                                1 => SpeedUnits::MilesPerHour,
-                                _ => SpeedUnits::MetersPerSecond,
-                            })
-                        },
-                    )),
+                    widget::settings::item::builder("Speed Units".to_string()).control(
+                        widget::dropdown(
+                            &self.speed_units,
+                            Some(selected_speed_units),
+                            move |index| {
+                                Message::SpeedUnits(match index {
+                                    2 => SpeedUnits::KilometresPerHour,
+                                    1 => SpeedUnits::MilesPerHour,
+                                    _ => SpeedUnits::MetersPerSecond,
+                                })
+                            },
+                        ),
+                    ),
                 )
                 .into(),
             widget::settings::view_section(fl!("appearance"))

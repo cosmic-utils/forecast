@@ -32,6 +32,7 @@ pub enum PressureUnits {
 pub enum SpeedUnits {
     MetersPerSecond,
     MilesPerHour,
+    KilometresPerHour,
 }
 
 #[derive(Clone, CosmicConfigEntry, Debug, Deserialize, Eq, PartialEq, Serialize)]
