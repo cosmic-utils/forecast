@@ -53,6 +53,7 @@ where
         let speed_units = match self.config.speed_units {
             SpeedUnits::MetersPerSecond => "m/s".to_string(),
             SpeedUnits::MilesPerHour => "mph".to_string(),
+            SpeedUnits::KilometresPerHour => "km/h".to_string(),
         };
 
         let column = widget::column()
@@ -153,6 +154,7 @@ where
         match self.config.speed_units {
             SpeedUnits::MetersPerSecond => value,
             SpeedUnits::MilesPerHour => value / 0.44704 as f64,
+            SpeedUnits::KilometresPerHour => value * 3.6,
         }
     }
 }
