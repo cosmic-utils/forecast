@@ -1,4 +1,4 @@
-use config::{AppTheme, PressureUnits, TimeFmt, CONFIG_VERSION};
+use config::{AppTheme, PressureUnits, SpeedUnits, TimeFmt, CONFIG_VERSION};
 use cosmic::cosmic_config::Update;
 use cosmic::cosmic_theme::ThemeMode;
 use cosmic::iced::keyboard::{Key, Modifiers};
@@ -43,6 +43,7 @@ pub enum Message {
     Units(Units),
     TimeFmt(TimeFmt),
     PressureUnits(PressureUnits),
+    SpeedUnits(SpeedUnits),
     AppTheme(AppTheme),
     DialogComplete(String),
     DialogCancel,
@@ -142,6 +143,7 @@ pub struct App {
     units: Vec<String>,
     timefmt: Vec<String>,
     pressure_units: Vec<String>,
+    speed_units: Vec<String>,
     app_themes: Vec<String>,
     dialog_pages: VecDeque<DialogPage>,
     dialog_page_text: widget::Id,
@@ -180,6 +182,7 @@ impl cosmic::Application for App {
         let app_units = vec![fl!("fahrenheit"), fl!("celsius")];
         let app_timefmt = vec![fl!("twelve-hr"), fl!("twenty-four-hr")];
         let app_pressure_units = vec!["hPa".to_string(), "bar".to_string(), "kPa".to_string(), "psi".to_string()];
+        let app_speed_units = vec!["m/s".to_string(), "mph".to_string()];
         let app_themes = vec![fl!("light"), fl!("dark"), fl!("system")];
 
         let mut app = App {
@@ -195,6 +198,7 @@ impl cosmic::Application for App {
             units: app_units,
             timefmt: app_timefmt,
             pressure_units: app_pressure_units,
+            speed_units: app_speed_units,
             app_themes,
             dialog_pages: VecDeque::new(),
             dialog_page_text: widget::Id::unique(),
@@ -407,6 +411,10 @@ impl cosmic::Application for App {
                 self.config.pressure_units = units;
                 commands.push(self.save_config());
             }
+            Message::SpeedUnits(speed) => {
+                self.config.speed_units = speed;
+                commands.push(self.save_config());
+            }
             Message::AppTheme(theme) => {
                 self.config.app_theme = theme;
                 commands.push(self.save_config());
@@ -575,6 +583,11 @@ where
             PressureUnits::Psi => 3,
         };
 
+        let selected_speed_units = match self.config.speed_units {
+            SpeedUnits::MetersPerSecond => 0,
+            SpeedUnits::MilesPerHour => 1,
+        };
+
         let selected_theme = match self.config.app_theme {
             config::AppTheme::Light => 0,
             config::AppTheme::Dark => 1,
@@ -617,6 +630,18 @@ where
                                 2 => PressureUnits::Kilopascal,
                                 3 => PressureUnits::Psi,
                                 _ => PressureUnits::Hectopascal,
+                            })
+                        },
+                    )),
+                )
+                .add(
+                    widget::settings::item::builder("Speed Units".to_string()).control(widget::dropdown(
+                        &self.speed_units,
+                        Some(selected_speed_units),
+                        move |index| {
+                            Message::SpeedUnits(match index {
+                                1 => SpeedUnits::MilesPerHour,
+                                _ => SpeedUnits::MetersPerSecond,
                             })
                         },
                     )),

@@ -6,6 +6,7 @@ use cosmic::widget;
 use cosmic::Element;
 
 use crate::app::config::PressureUnits;
+use crate::app::config::SpeedUnits;
 use crate::app::config::TimeFmt;
 use crate::app::{App, Message};
 use crate::model::weather::WeatherData;
@@ -53,6 +54,11 @@ where
             PressureUnits::Bar => "bar".to_string(),
             PressureUnits::Kilopascal => "kPa".to_string(),
             PressureUnits::Psi => "psi".to_string(),
+        };
+
+        let speed_units = match self.config.speed_units {
+            SpeedUnits::MetersPerSecond => "m/s".to_string(),
+            SpeedUnits::MilesPerHour => "mph".to_string(),
         };
 
         let column = widget::column()
@@ -143,7 +149,7 @@ where
                         )
                         .push_maybe(data.instant.details.wind_speed.map(
                             |wind_speed| {
-                                widget::text(format!("{}", wind_speed))
+                                widget::text(format!("{:.1} {}", self.calculate_speed_units(wind_speed), speed_units))
                                     .width(Length::Fill)
                                     .horizontal_alignment(Horizontal::Right)
                             }
@@ -165,6 +171,13 @@ where
             PressureUnits::Bar => value * 0.001 as f64,
             PressureUnits::Kilopascal => value * 0.1 as f64,
             PressureUnits::Psi => value * 0.0145037738 as f64,
+        }
+    }
+
+    fn calculate_speed_units(&self, value: f64) -> f64 {
+        match self.config.speed_units {
+            SpeedUnits::MetersPerSecond => value,
+            SpeedUnits::MilesPerHour => value / 0.44704 as f64,
         }
     }
 }
