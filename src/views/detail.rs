@@ -144,16 +144,16 @@ where
     fn calculate_pressure_units(&self, value: f64) -> f64 {
         match self.config.pressure_units {
             PressureUnits::Hectopascal => value,
-            PressureUnits::Bar => value * 0.001 as f64,
-            PressureUnits::Kilopascal => value * 0.1 as f64,
-            PressureUnits::Psi => value * 0.0145037738 as f64,
+            PressureUnits::Bar => value * 0.001_f64,
+            PressureUnits::Kilopascal => value * 0.1_f64,
+            PressureUnits::Psi => value * 0.0145037738_f64,
         }
     }
 
     fn calculate_speed_units(&self, value: f64) -> f64 {
         match self.config.speed_units {
             SpeedUnits::MetersPerSecond => value,
-            SpeedUnits::MilesPerHour => value / 0.44704 as f64,
+            SpeedUnits::MilesPerHour => value / 0.44704_f64,
             SpeedUnits::KilometresPerHour => value * 3.6,
         }
     }
