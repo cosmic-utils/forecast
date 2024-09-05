@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="res/icons/hicolor/scalable/apps/com.jwestall.Weather.svg">
+  <img src="res/icons/hicolor/scalable/apps/com.jwestall.Forecast.svg">
   <h1>Forecast</h1>
   <p>A simple weather application for the COSMIC™ Desktop</p>
   <img src="screenshots/window.png"></img>
