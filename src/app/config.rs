@@ -67,6 +67,13 @@ impl WeatherConfigState {
     }
 }
 
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Eq, Serialize)]
+pub enum SpeedUnits {
+    MetersPerSecond,
+    MilesPerHour,
+    KilometresPerHour,
+}
+
 #[derive(Clone, CosmicConfigEntry, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct WeatherConfig {
     pub location: Option<String>,
@@ -75,6 +82,7 @@ pub struct WeatherConfig {
     pub units: Units,
     pub timefmt: TimeFmt,
     pub pressure_units: PressureUnits,
+    pub speed_units: SpeedUnits,
     pub app_theme: AppTheme,
 }
 
@@ -87,6 +95,7 @@ impl Default for WeatherConfig {
             units: Units::Fahrenheit,
             timefmt: TimeFmt::TwelveHr,
             pressure_units: PressureUnits::Hectopascal,
+            speed_units: SpeedUnits::MetersPerSecond,
             app_theme: AppTheme::System,
         }
     }

@@ -117,7 +117,7 @@ where
 
     pub fn set_temp_units(&self, temp: f64) -> i64 {
         match self.config.units {
-            Units::Fahrenheit => ((temp * (9 as f64 / 5 as f64)) + 32 as f64) as i64,
+            Units::Fahrenheit => ((temp * (9_f64 / 5_f64)) + 32_f64) as i64,
             Units::Celsius => temp as i64,
         }
     }

@@ -1,11 +1,10 @@
 use chrono::Local;
-use cosmic::iced::alignment::Horizontal;
-use cosmic::iced::Length;
 use cosmic::prelude::CollectionWidget;
 use cosmic::widget;
 use cosmic::Element;
 
 use crate::app::config::PressureUnits;
+use crate::app::config::SpeedUnits;
 use crate::app::config::TimeFmt;
 use crate::app::{App, Message};
 use crate::model::weather::WeatherData;
@@ -51,6 +50,12 @@ where
             PressureUnits::Psi => "psi".to_string(),
         };
 
+        let speed_units = match self.config.speed_units {
+            SpeedUnits::MetersPerSecond => "m/s".to_string(),
+            SpeedUnits::MilesPerHour => "mph".to_string(),
+            SpeedUnits::KilometresPerHour => "km/h".to_string(),
+        };
+
         let column = widget::column()
             .padding(spacing.space_xs)
             .spacing(spacing.space_xs)
@@ -83,57 +88,49 @@ where
             )
             .push(
                 widget::settings::view_section("Details")
-                    .add(
-                        widget::row().push(widget::text("Air Pressure")).push_maybe(
-                            data.instant
-                                .details
-                                .air_pressure_at_sea_level
-                                .map(|air_pressure| {
-                                    widget::text(format!(
-                                        "{:.1} {}",
-                                        self.calculate_pressure_units(air_pressure),
-                                        pressure_units
-                                    ))
-                                    .width(Length::Fill)
-                                    .horizontal_alignment(Horizontal::Right)
-                                }),
-                        ),
-                    )
-                    .add(widget::row().push(widget::text("Cloud Area")).push_maybe(
-                        data.instant.details.cloud_area_fraction.map(|cloud_area| {
-                            widget::text(format!("{} %", cloud_area))
-                                .width(Length::Fill)
-                                .horizontal_alignment(Horizontal::Right)
-                        }),
+                    .add(widget::settings::item(
+                        "Air Pressure",
+                        widget::text(format!(
+                            "{:.1} {}",
+                            self.calculate_pressure_units(
+                                data.instant
+                                    .details
+                                    .air_pressure_at_sea_level
+                                    .unwrap_or(0.0)
+                            ),
+                            pressure_units
+                        )),
                     ))
-                    .add(
-                        widget::row()
-                            .push(widget::text("Relative Hummidity"))
-                            .push_maybe(data.instant.details.relative_humidity.map(
-                                |relative_humidity| {
-                                    widget::text(format!("{} %", relative_humidity))
-                                        .width(Length::Fill)
-                                        .horizontal_alignment(Horizontal::Right)
-                                },
-                            )),
-                    )
-                    .add(
-                        widget::row()
-                            .push(widget::text("Wind Direction"))
-                            .push_maybe(data.instant.details.wind_from_direction.map(
-                                |wind_direction| {
-                                    widget::text(format!("{} °", wind_direction))
-                                        .width(Length::Fill)
-                                        .horizontal_alignment(Horizontal::Right)
-                                },
-                            )),
-                    )
-                    .add(widget::row().push(widget::text("Wind Speed")).push_maybe(
-                        data.instant.details.wind_speed.map(|wind_speed| {
-                            widget::text(format!("{}", wind_speed))
-                                .width(Length::Fill)
-                                .horizontal_alignment(Horizontal::Right)
-                        }),
+                    .add(widget::settings::item(
+                        "Cloud Area",
+                        widget::text(format!(
+                            "{} %",
+                            data.instant.details.cloud_area_fraction.unwrap_or(0.0)
+                        )),
+                    ))
+                    .add(widget::settings::item(
+                        "Relative Hummidity",
+                        widget::text(format!(
+                            "{} %",
+                            data.instant.details.relative_humidity.unwrap_or(0.0)
+                        )),
+                    ))
+                    .add(widget::settings::item(
+                        "Wind Direction",
+                        widget::text(format!(
+                            "{} °",
+                            data.instant.details.wind_from_direction.unwrap_or(0.0)
+                        )),
+                    ))
+                    .add(widget::settings::item(
+                        "Wind Speed",
+                        widget::text(format!(
+                            "{:.1} {}",
+                            self.calculate_speed_units(
+                                data.instant.details.wind_speed.unwrap_or(0.0)
+                            ),
+                            speed_units
+                        )),
                     )),
             )
             .push(widget::text(format!("Last updated: {}", last_updated)))
@@ -147,9 +144,17 @@ where
     fn calculate_pressure_units(&self, value: f64) -> f64 {
         match self.config.pressure_units {
             PressureUnits::Hectopascal => value,
-            PressureUnits::Bar => value * 0.001 as f64,
-            PressureUnits::Kilopascal => value * 0.1 as f64,
-            PressureUnits::Psi => value * 0.0145037738 as f64,
+            PressureUnits::Bar => value * 0.001_f64,
+            PressureUnits::Kilopascal => value * 0.1_f64,
+            PressureUnits::Psi => value * 0.0145037738_f64,
+        }
+    }
+
+    fn calculate_speed_units(&self, value: f64) -> f64 {
+        match self.config.speed_units {
+            SpeedUnits::MetersPerSecond => value,
+            SpeedUnits::MilesPerHour => value / 0.44704_f64,
+            SpeedUnits::KilometresPerHour => value * 3.6,
         }
     }
 }

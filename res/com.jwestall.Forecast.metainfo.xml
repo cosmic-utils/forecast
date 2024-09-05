@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>com.jwestall.Weather</id>
+  <id>com.jwestall.Forecast</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-only</project_license>
   <project_group>COSMIC</project_group>
@@ -8,16 +8,16 @@
   <update_contact>jacob@jwestall.com</update_contact>
   <url type="homepage">https://github.com/jwestall/cosmic-weather</url>
   <url type="bugtracker">https://github.com/jwestall/cosmic-weather/issues</url>
-  <name>Weather</name>
+  <name>Forecast</name>
   <summary>A simple weather application for the COSMIC™ Desktop</summary>
   <description>
     <p>A simple weather application for the COSMIC™ Desktop</p>
   </description>
-  <launchable type="desktop-id">com.jwestall.Weather.desktop</launchable>
-  <icon type="remote" height="256" width="256">https://raw.githubusercontent.com/jwestall/cosmic-weather/main/res/icons/hicolor/scalable/apps/com.jwestall.Weather.svg</icon>
+  <launchable type="desktop-id">com.jwestall.Forecast.desktop</launchable>
+  <icon type="remote" height="256" width="256">https://raw.githubusercontent.com/cosmic-utils/Forecast/main/res/icons/hicolor/scalable/apps/com.jwestall.Forecast.svg</icon>
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/jwestall/cosmic-weather/main/screenshots/window.png</image>
+      <image>https://raw.githubusercontent.com/cosmic-utils/Forecast/main/screenshots/window.png</image>
       <caption>Light mode</caption>
     </screenshot>
   </screenshots>
@@ -26,7 +26,7 @@
       <mimetype>text/plain</mimetype>
     </mimetypes>
     <binaries>
-      <binary>cosmic-ext-weather</binary>
+      <binary>cosmic-ext-forecast</binary>
     </binaries>
   </provides>
 </component>

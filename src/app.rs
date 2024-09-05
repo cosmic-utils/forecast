@@ -1,4 +1,4 @@
-use config::{AppTheme, PressureUnits, TimeFmt, WeatherConfigState, CONFIG_VERSION};
+use config::{AppTheme, PressureUnits, SpeedUnits, TimeFmt, WeatherConfigState, CONFIG_VERSION};
 use cosmic::cosmic_config::Update;
 use cosmic::cosmic_theme::ThemeMode;
 use cosmic::iced::keyboard::{Key, Modifiers};
@@ -43,6 +43,7 @@ pub enum Message {
     Units(Units),
     TimeFmt(TimeFmt),
     PressureUnits(PressureUnits),
+    SpeedUnits(SpeedUnits),
     AppTheme(AppTheme),
     DialogComplete(String),
     DialogCancel,
@@ -146,6 +147,7 @@ pub struct App {
     units: Vec<String>,
     timefmt: Vec<String>,
     pressure_units: Vec<String>,
+    speed_units: Vec<String>,
     app_themes: Vec<String>,
     dialog_pages: VecDeque<DialogPage>,
     dialog_page_text: widget::Id,
@@ -156,7 +158,7 @@ impl cosmic::Application for App {
     type Flags = Flags;
     type Message = Message;
 
-    const APP_ID: &'static str = "com.jwestall.Weather";
+    const APP_ID: &'static str = "com.jwestall.Forecast";
 
     fn core(&self) -> &Core {
         &self.core
@@ -189,6 +191,7 @@ impl cosmic::Application for App {
             "kPa".to_string(),
             "psi".to_string(),
         ];
+        let app_speed_units = vec!["m/s".to_string(), "mph".to_string(), "km/h".to_string()];
         let app_themes = vec![fl!("light"), fl!("dark"), fl!("system")];
 
         let mut app = App {
@@ -203,6 +206,7 @@ impl cosmic::Application for App {
             units: app_units,
             timefmt: app_timefmt,
             pressure_units: app_pressure_units,
+            speed_units: app_speed_units,
             app_themes,
             dialog_pages: VecDeque::new(),
             dialog_page_text: widget::Id::unique(),
@@ -421,6 +425,10 @@ impl cosmic::Application for App {
                 self.config.pressure_units = units;
                 commands.push(self.save_config());
             }
+            Message::SpeedUnits(speed) => {
+                self.config.speed_units = speed;
+                commands.push(self.save_config());
+            }
             Message::AppTheme(theme) => {
                 self.config.app_theme = theme;
                 commands.push(self.save_config());
@@ -504,7 +512,7 @@ where
     Self: cosmic::Application,
 {
     fn update_title(&mut self) -> Command<Message> {
-        let window_title = fl!("cosmic-ext-weather").to_string();
+        let window_title = fl!("cosmic-ext-forecast").to_string();
 
         self.set_header_title(window_title.clone());
         self.set_window_title(window_title)
@@ -566,16 +574,16 @@ where
 
     fn about(&self) -> Element<Message> {
         let spacing = theme::active().cosmic().spacing;
-        let repository = "https://github.com/jwestall/cosmic-weather";
+        let repository = "https://github.com/cosmic-utils/Forecast";
         let hash = env!("VERGEN_GIT_SHA");
         let short_hash: String = hash.chars().take(7).collect();
         let date = env!("VERGEN_GIT_COMMIT_DATE");
         widget::column::with_children(vec![
             widget::svg(widget::svg::Handle::from_memory(
-                &include_bytes!("../res/icons/hicolor/scalable/apps/com.jwestall.Weather.svg")[..],
+                &include_bytes!("../res/icons/hicolor/scalable/apps/com.jwestall.Forecast.svg")[..],
             ))
             .into(),
-            widget::text::title3(fl!("cosmic-ext-weather")).into(),
+            widget::text::title3(fl!("cosmic-ext-forecast")).into(),
             widget::button::link(repository)
                 .on_press(Message::LaunchUrl(repository.to_string()))
                 .padding(spacing.space_none)
@@ -611,6 +619,12 @@ where
             PressureUnits::Bar => 1,
             PressureUnits::Kilopascal => 2,
             PressureUnits::Psi => 3,
+        };
+
+        let selected_speed_units = match self.config.speed_units {
+            SpeedUnits::MetersPerSecond => 0,
+            SpeedUnits::MilesPerHour => 1,
+            SpeedUnits::KilometresPerHour => 2,
         };
 
         let selected_theme = match self.config.app_theme {
@@ -656,6 +670,21 @@ where
                                     2 => PressureUnits::Kilopascal,
                                     3 => PressureUnits::Psi,
                                     _ => PressureUnits::Hectopascal,
+                                })
+                            },
+                        ),
+                    ),
+                )
+                .add(
+                    widget::settings::item::builder("Speed Units".to_string()).control(
+                        widget::dropdown(
+                            &self.speed_units,
+                            Some(selected_speed_units),
+                            move |index| {
+                                Message::SpeedUnits(match index {
+                                    2 => SpeedUnits::KilometresPerHour,
+                                    1 => SpeedUnits::MilesPerHour,
+                                    _ => SpeedUnits::MetersPerSecond,
                                 })
                             },
                         ),
