@@ -7,8 +7,8 @@ use cosmic::widget;
 use cosmic::Element;
 
 use crate::app::config::TimeFmt;
-use crate::app::{App, Message};
 use crate::app::config::Units;
+use crate::app::{App, Message};
 use crate::model::weather::Timeseries;
 use crate::model::weather::WeatherData;
 
@@ -20,8 +20,10 @@ where
         let current_time = Local::now();
         let location = self.config.location.clone();
         let spacing = cosmic::theme::active().cosmic().spacing;
-        let data = &self
-            .weather_data
+        let Some(weather_data) = &self.config_state.weather_data else {
+            return cosmic::widget::text("No weather data").into();
+        };
+        let data = weather_data
             .properties
             .timeseries
             .iter()
@@ -30,28 +32,22 @@ where
             .unwrap_or_default();
 
         let last_updated = match self.config.timefmt {
-            TimeFmt::TwelveHr => {
-                self
-                .weather_data
+            TimeFmt::TwelveHr => weather_data
                 .properties
                 .meta
                 .updated_at
                 .format("%_I:%M %p")
-                .to_string()
-            }
-            TimeFmt::TwentyFourHr => {
-                self
-                .weather_data
+                .to_string(),
+            TimeFmt::TwentyFourHr => weather_data
                 .properties
                 .meta
                 .updated_at
                 .format("%_H:%M")
-                .to_string()
-            }
+                .to_string(),
         };
 
         let timeseries: Vec<Element<Message>> =
-            self.weather_data
+            weather_data
                 .properties
                 .timeseries
                 .iter()
@@ -97,9 +93,12 @@ where
                             )
                             .push_maybe(data.instant.details.air_temperature.map(
                                 |air_temperature| {
-                                    widget::text(format!("{}°", self.set_temp_units(air_temperature)))
-                                        .size(42)
-                                        .style(cosmic::style::Text::Accent)
+                                    widget::text(format!(
+                                        "{}°",
+                                        self.set_temp_units(air_temperature)
+                                    ))
+                                    .size(42)
+                                    .style(cosmic::style::Text::Accent)
                                 },
                             )),
                     ),
@@ -118,7 +117,7 @@ where
 
     pub fn set_temp_units(&self, temp: f64) -> i64 {
         match self.config.units {
-            Units::Fahrenheit => {((temp * (9 as f64 / 5 as f64)) + 32 as f64) as i64},
+            Units::Fahrenheit => ((temp * (9 as f64 / 5 as f64)) + 32 as f64) as i64,
             Units::Celsius => temp as i64,
         }
     }
@@ -126,7 +125,7 @@ where
     fn format_time(&self, ts: &Timeseries) -> String {
         match self.config.timefmt {
             TimeFmt::TwelveHr => ts.time.format("%_I:%M %p").to_string(),
-            TimeFmt::TwentyFourHr => ts.time.format("%_H:%M").to_string()
+            TimeFmt::TwentyFourHr => ts.time.format("%_H:%M").to_string(),
         }
     }
 }

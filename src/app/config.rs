@@ -4,6 +4,8 @@ use cosmic::{
 };
 use serde::{Deserialize, Serialize};
 
+use crate::model::weather::WeatherData;
+
 use super::App;
 
 pub const CONFIG_VERSION: u64 = 1;
@@ -26,6 +28,43 @@ pub enum PressureUnits {
     Bar,
     Kilopascal,
     Psi,
+}
+
+#[derive(Clone, CosmicConfigEntry, Debug, Deserialize, Serialize, Default)]
+pub struct WeatherConfigState {
+    /// `Expires` response header of met.no request.
+    ///
+    /// No new request should be sent before this date.
+    /// The weather data does not change during this period.
+    #[serde(default)]
+    pub expires: Option<chrono::DateTime<chrono::FixedOffset>>,
+    /// Date of the last request.
+    /// 
+    /// Used together with the `If-Modified-Since` request header.
+    /// If the weather data has not changed, the response status is `304 Not Modified`.
+    #[serde(default)]
+    pub last_request: Option<chrono::DateTime<chrono::FixedOffset>>,
+
+    pub weather_data: Option<WeatherData>,
+}
+
+impl WeatherConfigState {
+    pub fn config_handler() -> Option<Config> {
+        Config::new_state(App::APP_ID, CONFIG_VERSION).ok()
+    }
+
+    pub fn config() -> Self {
+        match Self::config_handler() {
+            Some(config_handler) => {
+                Self::get_entry(&config_handler).unwrap_or_else(|(errs, config)| {
+                    log::info!("errors loading config state: {:?}", errs);
+
+                    config
+                })
+            }
+            None => Self::default(),
+        }
+    }
 }
 
 #[derive(Clone, CosmicConfigEntry, Debug, Deserialize, Eq, PartialEq, Serialize)]
@@ -63,6 +102,7 @@ impl WeatherConfig {
             Some(config_handler) => {
                 WeatherConfig::get_entry(&config_handler).unwrap_or_else(|(errs, config)| {
                     log::info!("errors loading config: {:?}", errs);
+
                     config
                 })
             }

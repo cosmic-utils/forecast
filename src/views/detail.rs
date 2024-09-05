@@ -18,8 +18,10 @@ where
         let current_time = Local::now();
         let location = self.config.location.clone();
         let spacing = cosmic::theme::active().cosmic().spacing;
-        let data = &self
-            .weather_data
+        let Some(weather_data) = &self.config_state.weather_data else {
+            return cosmic::widget::text("No weather data").into();
+        };
+        let data = weather_data
             .properties
             .timeseries
             .iter()
@@ -28,24 +30,18 @@ where
             .unwrap_or_default();
 
         let last_updated = match self.config.timefmt {
-            TimeFmt::TwelveHr => {
-                self
-                .weather_data
+            TimeFmt::TwelveHr => weather_data
                 .properties
                 .meta
                 .updated_at
                 .format("%_I:%M %p")
-                .to_string()
-            }
-            TimeFmt::TwentyFourHr => {
-                self
-                .weather_data
+                .to_string(),
+            TimeFmt::TwentyFourHr => weather_data
                 .properties
                 .meta
                 .updated_at
                 .format("%_H:%M")
-                .to_string()
-            }
+                .to_string(),
         };
 
         let pressure_units = match self.config.pressure_units {
@@ -75,9 +71,12 @@ where
                             )
                             .push_maybe(data.instant.details.air_temperature.map(
                                 |air_temperature| {
-                                    widget::text(format!("{}°", self.set_temp_units(air_temperature)))
-                                        .size(42)
-                                        .style(cosmic::style::Text::Accent)
+                                    widget::text(format!(
+                                        "{}°",
+                                        self.set_temp_units(air_temperature)
+                                    ))
+                                    .size(42)
+                                    .style(cosmic::style::Text::Accent)
                                 },
                             )),
                     ),
@@ -85,71 +84,57 @@ where
             .push(
                 widget::settings::view_section("Details")
                     .add(
-                    widget::row()
-                        .push(
-                            widget::text("Air Pressure")
-                        )
-                        .push_maybe(data.instant.details.air_pressure_at_sea_level.map(
-                            |air_pressure| {
-                                widget::text(format!("{:.1} {}", self.calculate_pressure_units(air_pressure), pressure_units))
+                        widget::row().push(widget::text("Air Pressure")).push_maybe(
+                            data.instant
+                                .details
+                                .air_pressure_at_sea_level
+                                .map(|air_pressure| {
+                                    widget::text(format!(
+                                        "{:.1} {}",
+                                        self.calculate_pressure_units(air_pressure),
+                                        pressure_units
+                                    ))
                                     .width(Length::Fill)
                                     .horizontal_alignment(Horizontal::Right)
-                            }
-                        )),
+                                }),
+                        ),
+                    )
+                    .add(widget::row().push(widget::text("Cloud Area")).push_maybe(
+                        data.instant.details.cloud_area_fraction.map(|cloud_area| {
+                            widget::text(format!("{} %", cloud_area))
+                                .width(Length::Fill)
+                                .horizontal_alignment(Horizontal::Right)
+                        }),
+                    ))
+                    .add(
+                        widget::row()
+                            .push(widget::text("Relative Hummidity"))
+                            .push_maybe(data.instant.details.relative_humidity.map(
+                                |relative_humidity| {
+                                    widget::text(format!("{} %", relative_humidity))
+                                        .width(Length::Fill)
+                                        .horizontal_alignment(Horizontal::Right)
+                                },
+                            )),
                     )
                     .add(
-                    widget::row()
-                        .push(
-                            widget::text("Cloud Area")
-                        )
-                        .push_maybe(data.instant.details.cloud_area_fraction.map(
-                            |cloud_area| {
-                                widget::text(format!("{} %", cloud_area))
-                                    .width(Length::Fill)
-                                    .horizontal_alignment(Horizontal::Right)
-                            }
-                        )),
+                        widget::row()
+                            .push(widget::text("Wind Direction"))
+                            .push_maybe(data.instant.details.wind_from_direction.map(
+                                |wind_direction| {
+                                    widget::text(format!("{} °", wind_direction))
+                                        .width(Length::Fill)
+                                        .horizontal_alignment(Horizontal::Right)
+                                },
+                            )),
                     )
-                    .add(
-                    widget::row()
-                        .push(
-                            widget::text("Relative Hummidity")
-                        )
-                        .push_maybe(data.instant.details.relative_humidity.map(
-                            |relative_humidity| {
-                                widget::text(format!("{} %", relative_humidity))
-                                    .width(Length::Fill)
-                                    .horizontal_alignment(Horizontal::Right)
-                            }
-                        )),
-                    )
-                    .add(
-                    widget::row()
-                        .push(
-                            widget::text("Wind Direction")
-                        )
-                        .push_maybe(data.instant.details.wind_from_direction.map(
-                            |wind_direction| {
-                                widget::text(format!("{} °", wind_direction))
-                                    .width(Length::Fill)
-                                    .horizontal_alignment(Horizontal::Right)
-                            }
-                        )),
-                    )
-                    .add(
-                    widget::row()
-                        .push(
-                            widget::text("Wind Speed")
-                        )
-                        .push_maybe(data.instant.details.wind_speed.map(
-                            |wind_speed| {
-                                widget::text(format!("{}", wind_speed))
-                                    .width(Length::Fill)
-                                    .horizontal_alignment(Horizontal::Right)
-                            }
-                        )),
-                    )
-                
+                    .add(widget::row().push(widget::text("Wind Speed")).push_maybe(
+                        data.instant.details.wind_speed.map(|wind_speed| {
+                            widget::text(format!("{}", wind_speed))
+                                .width(Length::Fill)
+                                .horizontal_alignment(Horizontal::Right)
+                        }),
+                    )),
             )
             .push(widget::text(format!("Last updated: {}", last_updated)))
             .push(widget::text(

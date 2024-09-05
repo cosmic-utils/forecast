@@ -1,4 +1,4 @@
-use config::{AppTheme, PressureUnits, TimeFmt, CONFIG_VERSION};
+use config::{AppTheme, PressureUnits, TimeFmt, WeatherConfigState, CONFIG_VERSION};
 use cosmic::cosmic_config::Update;
 use cosmic::cosmic_theme::ThemeMode;
 use cosmic::iced::keyboard::{Key, Modifiers};
@@ -28,7 +28,7 @@ use crate::app::icon_cache::icon_cache_get;
 use crate::app::key_bind::key_binds;
 use crate::fl;
 use crate::model::location::Location;
-use crate::model::weather::WeatherData;
+use crate::model::weather::{WeatherData, WeatherRequestStatus};
 
 #[derive(Clone, Debug)]
 pub enum Message {
@@ -49,7 +49,7 @@ pub enum Message {
     DialogUpdate(DialogPage),
     UpdateLocations(Vec<Location>),
     SetLocation(Location),
-    SetWeatherData(WeatherData),
+    SetWeatherData((WeatherConfigState, WeatherRequestStatus)),
     Error(String),
 }
 
@@ -57,6 +57,8 @@ pub enum Message {
 pub struct Flags {
     pub config_handler: Option<cosmic_config::Config>,
     pub config: WeatherConfig,
+    pub config_state: WeatherConfigState,
+    pub config_state_handler: Option<cosmic_config::Config>,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -136,8 +138,10 @@ pub struct App {
     modifiers: Modifiers,
     context_page: ContextPage,
     config_handler: Option<cosmic_config::Config>,
+    config_state_handler: Option<cosmic_config::Config>,
     pub config: WeatherConfig,
-    pub weather_data: WeatherData,
+    pub config_state: WeatherConfigState,
+
     app_locations: Vec<Location>,
     units: Vec<String>,
     timefmt: Vec<String>,
@@ -179,7 +183,12 @@ impl cosmic::Application for App {
         let mut commands = vec![];
         let app_units = vec![fl!("fahrenheit"), fl!("celsius")];
         let app_timefmt = vec![fl!("twelve-hr"), fl!("twenty-four-hr")];
-        let app_pressure_units = vec!["hPa".to_string(), "bar".to_string(), "kPa".to_string(), "psi".to_string()];
+        let app_pressure_units = vec![
+            "hPa".to_string(),
+            "bar".to_string(),
+            "kPa".to_string(),
+            "psi".to_string(),
+        ];
         let app_themes = vec![fl!("light"), fl!("dark"), fl!("system")];
 
         let mut app = App {
@@ -190,7 +199,6 @@ impl cosmic::Application for App {
             context_page: ContextPage::Settings,
             config_handler: flags.config_handler,
             config: flags.config,
-            weather_data: WeatherData::default(),
             app_locations: Vec::new(),
             units: app_units,
             timefmt: app_timefmt,
@@ -198,6 +206,8 @@ impl cosmic::Application for App {
             app_themes,
             dialog_pages: VecDeque::new(),
             dialog_page_text: widget::Id::unique(),
+            config_state: flags.config_state,
+            config_state_handler: flags.config_state_handler,
         };
 
         // Default location to Denver if empty
@@ -224,8 +234,12 @@ impl cosmic::Application for App {
         // Do not open nav bar by default
         app.core.nav_bar_set_toggled(false);
 
+        if app.config_state.expires.is_none()
+            || app.config_state.expires <= Some(chrono::offset::Utc::now().into())
+        {
+            commands.push(app.update_weather_data());
+        }
         commands.push(app.update_title());
-        commands.push(app.update_weather_data());
 
         (app, Command::batch(commands))
     }
@@ -440,8 +454,18 @@ impl cosmic::Application for App {
 
                 self.dialog_pages.pop_front();
             }
-            Message::SetWeatherData(data) => {
-                self.weather_data = data;
+            Message::SetWeatherData((config_state, status)) => {
+                match status {
+                    WeatherRequestStatus::NotModified => {
+                        self.config_state.expires = config_state.expires;
+                        self.config_state.last_request = config_state.last_request;
+                    }
+                    WeatherRequestStatus::Other => {
+                        self.config_state = config_state;
+                    }
+                }
+
+                return self.save_config_state();
             }
             Message::Error(err) => eprintln!("Error: {}", err),
             Message::SystemThemeModeChange => {
@@ -495,12 +519,23 @@ where
 
         Command::none()
     }
+    fn save_config_state(&mut self) -> Command<Message> {
+        if let Some(ref config_state_handler) = self.config_state_handler {
+            if let Err(err) = self.config_state.write_entry(config_state_handler) {
+                log::error!("failed to save config: {}", err);
+            }
+        }
+
+        Command::none()
+    }
 
     fn save_theme(&self) -> Command<Message> {
         cosmic::app::command::set_theme(self.config.app_theme.theme())
     }
 
     fn update_weather_data(&self) -> Command<Message> {
+        let last_request = self.config_state.last_request.map(|lr| lr.to_utc());
+
         let (Some(lat), Some(long)) = (
             self.config.latitude.as_ref(),
             self.config.longitude.as_ref(),
@@ -513,17 +548,20 @@ where
             long.parse::<f64>().expect("Error parsing string to f64"),
         );
 
-        Command::perform(WeatherData::get_weather_data(coords), |data| match data {
-            Ok(data) => {
-                let Some(data) = data else {
-                    return cosmic::app::Message::App(Message::Error(
-                        "Could not get weather data.".to_string(),
-                    ));
-                };
-                cosmic::app::Message::App(Message::SetWeatherData(data.clone()))
-            }
-            Err(err) => cosmic::app::Message::App(Message::Error(err.to_string())),
-        })
+        Command::perform(
+            WeatherData::get_weather_data(coords, last_request),
+            |data| match data {
+                Ok(data) => {
+                    let Some(data) = data else {
+                        return cosmic::app::Message::App(Message::Error(
+                            "Could not get weather data.".to_string(),
+                        ));
+                    };
+                    cosmic::app::Message::App(Message::SetWeatherData(data.clone()))
+                }
+                Err(err) => cosmic::app::Message::App(Message::Error(err.to_string())),
+            },
+        )
     }
 
     fn about(&self) -> Element<Message> {
@@ -608,18 +646,20 @@ where
                     )),
                 )
                 .add(
-                    widget::settings::item::builder("Pressure Units".to_string()).control(widget::dropdown(
-                        &self.pressure_units,
-                        Some(selected_pressure_units),
-                        move |index| {
-                            Message::PressureUnits(match index {
-                                1 => PressureUnits::Bar,
-                                2 => PressureUnits::Kilopascal,
-                                3 => PressureUnits::Psi,
-                                _ => PressureUnits::Hectopascal,
-                            })
-                        },
-                    )),
+                    widget::settings::item::builder("Pressure Units".to_string()).control(
+                        widget::dropdown(
+                            &self.pressure_units,
+                            Some(selected_pressure_units),
+                            move |index| {
+                                Message::PressureUnits(match index {
+                                    1 => PressureUnits::Bar,
+                                    2 => PressureUnits::Kilopascal,
+                                    3 => PressureUnits::Psi,
+                                    _ => PressureUnits::Hectopascal,
+                                })
+                            },
+                        ),
+                    ),
                 )
                 .into(),
             widget::settings::view_section(fl!("appearance"))
