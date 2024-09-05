@@ -541,7 +541,7 @@ where
 
     fn about(&self) -> Element<Message> {
         let spacing = theme::active().cosmic().spacing;
-        let repository = "https://github.com/jwestall/cosmic-weather";
+        let repository = "https://github.com/cosmic-utils/Forecast";
         let hash = env!("VERGEN_GIT_SHA");
         let short_hash: String = hash.chars().take(7).collect();
         let date = env!("VERGEN_GIT_COMMIT_DATE");
