@@ -1,10 +1,10 @@
 [Desktop Entry]
-Name=Weather
-Exec=cosmic-ext-weather %F
+Name=Forecast
+Exec=cosmic-ext-forecast %F
 Terminal=false
 Type=Application
 StartupNotify=true
-Icon=com.jwestall.Weather
+Icon=com.jwestall.Forecast
 Categories=COSMIC;Utility;
 Keywords=Folder;Manager;
 MimeType=inode/directory;
