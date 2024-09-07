@@ -23,7 +23,11 @@ include_dir = "0.7.4"
 [dependencies.libcosmic]
 git = "https://github.com/pop-os/libcosmic"
 default-features = false
-features = ["debug", "winit", "wgpu", "tokio", "image"]
+features = ["debug", "winit", "tokio", "image"]
 
 [build-dependencies]
 vergen = { version = "8", features = ["git", "gitcl"] }
+
+[features]
+default = ["wgpu"]
+wgpu = ["libcosmic/wgpu"]
