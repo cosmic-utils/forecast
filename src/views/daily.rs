@@ -1,3 +1,4 @@
+use chrono::DateTime;
 use chrono::Local;
 use cosmic::iced::Alignment;
 use cosmic::iced_widget::scrollable::Direction;
@@ -51,7 +52,7 @@ where
                 .properties
                 .timeseries
                 .iter()
-                .filter(|timeseries| timeseries.time >= current_time && timeseries.time.format("%H").to_string() == "07")
+                .filter(|timeseries| self.check_time(timeseries, current_time))
                 .map(|ts| {
                     let data_6_hrs = match &ts.data.next_6_hours {
                         Some(data) => match &data.details {
@@ -131,5 +132,20 @@ where
 
     fn format_date(&self, ts: &Timeseries) -> String {
         ts.time.format("%a").to_string()
+    }
+
+    fn check_time(&self, timeseries: &Timeseries, current_time: DateTime<Local>) -> bool {
+        let current_hour = current_time.format("%H").to_string().parse::<i64>().unwrap_or_default();
+        let current_hour = if current_hour > 12 {
+            current_hour - 12
+        } else {
+            current_hour
+        };
+        
+        let ts_hour = timeseries.time.format("%H").to_string().parse::<i64>().unwrap_or_default();
+        let check_hour = current_hour + 6;
+
+        timeseries.time > current_time
+        && ts_hour == check_hour
     }
 }
