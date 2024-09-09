@@ -51,7 +51,7 @@ where
                 .properties
                 .timeseries
                 .iter()
-                .filter(|timeseries| timeseries.time > current_time && timeseries.time.format("%H").to_string() == "12")
+                .filter(|timeseries| timeseries.time >= current_time && timeseries.time.format("%H").to_string() == "07")
                 .map(|ts| {
                     let data_6_hrs = match &ts.data.next_6_hours {
                         Some(data) => match &data.details {
