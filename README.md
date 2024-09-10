@@ -5,10 +5,25 @@
   <img src="screenshots/window.png"></img>
 </div>
 
-# Project Goals
+# Installation
+```
+git clone https://github.com/edfloreshz/tasks.git
+cd tasks
+sudo just install
+```
 
-Below are the current goals for development of this app. Feel free to contribute anywhere you feel able to!
+# Build
+```
+git clone https://github.com/edfloreshz/tasks.git
+cd tasks
+cargo build
+```
 
-- Add more language translation files
-- Finalize daily view
-- Add Flatpak manifest
+## Dependencies
+- [libcosmic](https://github.com/pop-os/libcosmic?tab=readme-ov-file#building)
+
+# Copyright and licensing
+
+Copyright 2024 � Jacob Westall
+
+Forecast is released under the terms of the [GPL-3.0](https://github.com/cosmic-utils/forecast/LICENSE)
