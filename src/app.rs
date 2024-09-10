@@ -276,7 +276,8 @@ impl cosmic::Application for App {
                 let mut content = widget::column().spacing(space_xxs).push(
                     widget::text_input(fl!("search"), city.as_str())
                         .id(self.dialog_page_text.clone())
-                        .on_input(move |city| Message::DialogUpdate(DialogPage::Change(city))),
+                        .on_input(move |city| Message::DialogUpdate(DialogPage::Change(city)))
+                        .on_submit(Message::DialogComplete(city.to_string())),
                 );
 
                 if !self.app_locations.is_empty() {
