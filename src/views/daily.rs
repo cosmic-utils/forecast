@@ -47,6 +47,11 @@ where
                 .to_string(),
         };
 
+        // For data logging purposes
+        for ts in weather_data.properties.timeseries.iter() {
+            println!("{}", ts.time);
+        }
+
         let timeseries: Vec<Element<Message>> =
             weather_data
                 .properties
@@ -135,17 +140,20 @@ where
     }
 
     fn check_time(&self, timeseries: &Timeseries, current_time: DateTime<Local>) -> bool {
-        let current_hour = current_time.format("%H").to_string().parse::<i64>().unwrap_or_default();
-        let current_hour = if current_hour > 12 {
-            current_hour - 12
-        } else {
-            current_hour
-        };
-        
-        let ts_hour = timeseries.time.format("%H").to_string().parse::<i64>().unwrap_or_default();
-        let check_hour = current_hour + 6;
+        let timezone = current_time
+            .format("%:::z")
+            .to_string()
+            .parse::<i64>()
+            .unwrap_or_default()
+            .abs();
+        let timehour = timeseries
+            .time
+            .format("%H")
+            .to_string()
+            .parse::<i64>()
+            .unwrap_or_default();
 
         timeseries.time > current_time
-        && ts_hour == check_hour
+        && timehour == (12 - timezone)
     }
 }
