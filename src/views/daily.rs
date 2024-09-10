@@ -144,16 +144,20 @@ where
             .format("%:::z")
             .to_string()
             .parse::<i64>()
-            .unwrap_or_default()
-            .abs();
+            .unwrap_or_default();
         let timehour = timeseries
             .time
             .format("%H")
             .to_string()
             .parse::<i64>()
             .unwrap_or_default();
+        let comparetime = if (12 + timezone) > 12 {
+            timezone
+        } else {
+            timezone + 12
+        };
 
         timeseries.time > current_time
-        && timehour == (12 - timezone)
+        && timehour == comparetime
     }
 }
