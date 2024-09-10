@@ -24,6 +24,6 @@ cargo build
 
 # Copyright and licensing
 
-Copyright 2024 � Jacob Westall
+Copyright 2024 © Jacob Westall
 
-Forecast is released under the terms of the [GPL-3.0](https://github.com/cosmic-utils/forecast/LICENSE)
+Forecast is released under the terms of the [GPL-3.0](https://github.com/cosmic-utils/forecast/blob/main/LICENSE)
