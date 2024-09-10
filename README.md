@@ -7,14 +7,14 @@
 
 # Installation
 ```
-git clone https://github.com/edfloreshz/tasks.git
+git clone https://github.com/cosmic-utils/forecast.git
 cd tasks
 sudo just install
 ```
 
 # Build
 ```
-git clone https://github.com/edfloreshz/tasks.git
+git clone https://github.com/cosmic-utils/forecast.git
 cd tasks
 cargo build
 ```
