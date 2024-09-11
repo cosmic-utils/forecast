@@ -8,14 +8,14 @@
 # Installation
 ```
 git clone https://github.com/cosmic-utils/forecast.git
-cd tasks
+cd forecast
 sudo just install
 ```
 
 # Build
 ```
 git clone https://github.com/cosmic-utils/forecast.git
-cd tasks
+cd forecast
 cargo build
 ```
 
