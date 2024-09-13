@@ -19,7 +19,10 @@ pub fn menu_bar<'a>(key_binds: &HashMap<KeyBind, Action>) -> Element<'a, Message
             root(fl!("edit")),
             items(
                 key_binds,
-                vec![Item::Button(fl!("change-city"), Action::ChangeCity)],
+                vec![
+                    Item::Button(fl!("change-city"), Action::ChangeCity),
+                    Item::Button(fl!("api-key"), Action::ChangeApiKey),
+                ],
             ),
         ),
         Tree::with_children(

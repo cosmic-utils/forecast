@@ -39,7 +39,7 @@ pub struct WeatherConfigState {
     #[serde(default)]
     pub expires: Option<chrono::DateTime<chrono::FixedOffset>>,
     /// Date of the last request.
-    /// 
+    ///
     /// Used together with the `If-Modified-Since` request header.
     /// If the weather data has not changed, the response status is `304 Not Modified`.
     #[serde(default)]
@@ -84,6 +84,7 @@ pub struct WeatherConfig {
     pub pressure_units: PressureUnits,
     pub speed_units: SpeedUnits,
     pub app_theme: AppTheme,
+    pub api_key: String,
 }
 
 impl Default for WeatherConfig {
@@ -97,6 +98,7 @@ impl Default for WeatherConfig {
             pressure_units: PressureUnits::Hectopascal,
             speed_units: SpeedUnits::MetersPerSecond,
             app_theme: AppTheme::System,
+            api_key: String::default(),
         }
     }
 }
@@ -142,6 +144,21 @@ impl AppTheme {
                 t
             }
             Self::System => theme::system_preference(),
+        }
+    }
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub enum AppError {
+    Location(String),
+    Weather(String),
+}
+
+impl std::fmt::Display for AppError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AppError::Location(err) => write!(f, "{}", err),
+            AppError::Weather(err) => write!(f, "{}", err),
         }
     }
 }

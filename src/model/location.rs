@@ -22,17 +22,25 @@ impl AsRef<str> for Location {
 }
 
 impl Location {
-    pub async fn get_location_data(query: String) -> Result<Vec<Location>, reqwest::Error> {
-        let params = [("q", query)];
+    pub async fn get_location_data(
+        query: String,
+        key: String,
+    ) -> Result<Vec<Location>, reqwest::Error> {
+        let mut params = vec![("q", query)];
 
-        let geocoding_ans: Vec<Location> = reqwest::Client::new()
+        if !key.is_empty() {
+            params.push(("api_key", key));
+        }
+
+        let response = reqwest::Client::new()
             .get("https://geocode.maps.co/search?".to_string())
             .query(&params)
             .send()
-            .await?
-            .json()
             .await?;
 
-        Ok(geocoding_ans)
+        match response.error_for_status() {
+            Ok(resp) => resp.json::<Vec<Location>>().await,
+            Err(e) => Err(e),
+        }
     }
 }
