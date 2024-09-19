@@ -1,4 +1,6 @@
-use config::{AppTheme, PressureUnits, SpeedUnits, TimeFmt, WeatherConfigState, CONFIG_VERSION};
+use config::{
+    AppError, AppTheme, PressureUnits, SpeedUnits, TimeFmt, WeatherConfigState, CONFIG_VERSION,
+};
 use cosmic::cosmic_config::Update;
 use cosmic::cosmic_theme::ThemeMode;
 use cosmic::iced::keyboard::{Key, Modifiers};
@@ -33,6 +35,7 @@ use crate::model::weather::{WeatherData, WeatherRequestStatus};
 #[derive(Clone, Debug)]
 pub enum Message {
     ChangeCity,
+    ChangeApiKey,
     Quit,
     SystemThemeModeChange,
     ToggleContextPage(ContextPage),
@@ -45,13 +48,16 @@ pub enum Message {
     PressureUnits(PressureUnits),
     SpeedUnits(SpeedUnits),
     AppTheme(AppTheme),
-    DialogComplete(String),
+    DialogComplete((String, String)),
     DialogCancel,
     DialogUpdate(DialogPage),
     UpdateLocations(Vec<Location>),
     SetLocation(Location),
     SetWeatherData((WeatherConfigState, WeatherRequestStatus)),
-    Error(String),
+    ApiKeyUpdate(String),
+    SaveApiKey,
+    OpenWebsite(String),
+    Error(AppError),
 }
 
 #[derive(Clone, Debug)]
@@ -80,6 +86,8 @@ impl ContextPage {
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DialogPage {
     Change(String),
+    ApiKey,
+    Info(AppError),
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -87,6 +95,7 @@ pub enum Action {
     About,
     Settings,
     ChangeCity,
+    ChangeApiKey,
     Quit,
 }
 
@@ -98,6 +107,7 @@ impl MenuAction for Action {
             Action::About => Message::ToggleContextPage(ContextPage::About),
             Action::Settings => Message::ToggleContextPage(ContextPage::Settings),
             Action::ChangeCity => Message::ChangeCity,
+            Action::ChangeApiKey => Message::ChangeApiKey,
             Action::Quit => Message::Quit,
         }
     }
@@ -148,6 +158,7 @@ pub struct App {
     timefmt: Vec<String>,
     pressure_units: Vec<String>,
     speed_units: Vec<String>,
+    api_key: String,
     app_themes: Vec<String>,
     dialog_pages: VecDeque<DialogPage>,
     dialog_page_text: widget::Id,
@@ -201,6 +212,7 @@ impl cosmic::Application for App {
             modifiers: Modifiers::empty(),
             context_page: ContextPage::Settings,
             config_handler: flags.config_handler,
+            api_key: flags.config.api_key.clone(),
             config: flags.config,
             app_locations: Vec::new(),
             units: app_units,
@@ -218,17 +230,19 @@ impl cosmic::Application for App {
         // TODO: Default to user location
         if app.config.location.is_none() {
             let command = Command::perform(
-                Location::get_location_data(String::from("Denver")),
+                Location::get_location_data(String::from("Denver"), app.api_key.clone()),
                 |data| match data {
                     Ok(data) => {
                         let Some(data) = data.first() else {
-                            return cosmic::app::Message::App(Message::Error(
+                            return cosmic::app::Message::App(Message::Error(AppError::Location(
                                 "Could not get location data.".to_string(),
-                            ));
+                            )));
                         };
                         cosmic::app::Message::App(Message::SetLocation(data.clone()))
                     }
-                    Err(err) => cosmic::app::Message::App(Message::Error(err.to_string())),
+                    Err(err) => cosmic::app::Message::App(Message::Error(AppError::Location(
+                        err.to_string(),
+                    ))),
                 },
             );
 
@@ -277,7 +291,10 @@ impl cosmic::Application for App {
                     widget::text_input(fl!("search"), city.as_str())
                         .id(self.dialog_page_text.clone())
                         .on_input(move |city| Message::DialogUpdate(DialogPage::Change(city)))
-                        .on_submit(Message::DialogComplete(city.to_string())),
+                        .on_submit(Message::DialogComplete((
+                            city.to_string(),
+                            self.api_key.clone(),
+                        ))),
                 );
 
                 if !self.app_locations.is_empty() {
@@ -298,10 +315,53 @@ impl cosmic::Application for App {
                 }
 
                 widget::dialog(fl!("change-city"))
-                    .primary_action(
-                        widget::button::suggested(fl!("search"))
-                            .on_press(Message::DialogComplete(city.to_string())),
+                    .primary_action(widget::button::suggested(fl!("search")).on_press(
+                        Message::DialogComplete((city.to_string(), self.api_key.clone())),
+                    ))
+                    .secondary_action(
+                        widget::button::standard(fl!("cancel")).on_press(Message::DialogCancel),
                     )
+                    .control(content)
+            }
+            DialogPage::ApiKey => {
+                let content = widget::column()
+                    .spacing(space_xxs)
+                    .push(
+                        widget::text_input(fl!("api-key"), self.api_key.as_str())
+                            .on_input(Message::ApiKeyUpdate)
+                            .on_submit(Message::SaveApiKey),
+                    )
+                    .push(widget::text::body(fl!("provide-api-key")))
+                    .push(widget::button::standard(fl!("create-account")).on_press(
+                        Message::OpenWebsite("https://geocode.maps.co/join/".to_string()),
+                    ));
+
+                widget::dialog(fl!("api-key"))
+                    .primary_action(
+                        widget::button::suggested(fl!("save")).on_press(Message::SaveApiKey),
+                    )
+                    .secondary_action(
+                        widget::button::standard(fl!("cancel")).on_press(Message::DialogCancel),
+                    )
+                    .control(content)
+            }
+            DialogPage::Info(app_errored) => {
+                let mut content = widget::column::with_capacity(2).spacing(12);
+
+                match app_errored {
+                    AppError::Location(body) => {
+                        let title = widget::text::title4("This request require API key");
+                        content = content.push(title);
+                        content = content.push(widget::text::body(body));
+                    }
+                    AppError::Weather(body) => {
+                        let title = widget::text::title4("Fetching Weather");
+                        content = content.push(title);
+                        content = content.push(widget::text::body(body));
+                    }
+                }
+
+                widget::dialog("")
                     .secondary_action(
                         widget::button::standard(fl!("cancel")).on_press(Message::DialogCancel),
                     )
@@ -380,6 +440,10 @@ impl cosmic::Application for App {
                 self.dialog_pages
                     .push_back(DialogPage::Change(String::new()));
             }
+            Message::ChangeApiKey => {
+                // TODO
+                self.dialog_pages.push_back(DialogPage::ApiKey)
+            }
             Message::Quit => {
                 return window::close(window::Id::MAIN);
             }
@@ -435,11 +499,13 @@ impl cosmic::Application for App {
                 commands.push(self.save_config());
                 commands.push(self.save_theme());
             }
-            Message::DialogComplete(city) => {
+            Message::DialogComplete((city, key)) => {
                 let command =
-                    Command::perform(Location::get_location_data(city), |data| match data {
+                    Command::perform(Location::get_location_data(city, key), |data| match data {
                         Ok(data) => cosmic::app::Message::App(Message::UpdateLocations(data)),
-                        Err(err) => cosmic::app::Message::App(Message::Error(err.to_string())),
+                        Err(err) => cosmic::app::Message::App(Message::Error(AppError::Location(
+                            err.to_string(),
+                        ))),
                     });
 
                 commands.push(command);
@@ -476,7 +542,23 @@ impl cosmic::Application for App {
 
                 return self.save_config_state();
             }
-            Message::Error(err) => eprintln!("Error: {}", err),
+            Message::ApiKeyUpdate(key) => {
+                self.api_key = key;
+            }
+            Message::SaveApiKey => {
+                self.config.api_key = self.api_key.clone();
+                commands.push(self.save_config());
+
+                self.dialog_pages.pop_front();
+            }
+            Message::OpenWebsite(url) => {
+                let _ = open::that(url);
+            }
+            Message::Error(err) => {
+                eprintln!("Error: {}", err);
+                self.dialog_pages.pop_front();
+                self.dialog_pages.push_back(DialogPage::Info(err));
+            }
             Message::SystemThemeModeChange => {
                 commands.push(self.save_theme());
                 commands.push(self.save_config());
@@ -562,13 +644,15 @@ where
             |data| match data {
                 Ok(data) => {
                     let Some(data) = data else {
-                        return cosmic::app::Message::App(Message::Error(
+                        return cosmic::app::Message::App(Message::Error(AppError::Weather(
                             "Could not get weather data.".to_string(),
-                        ));
+                        )));
                     };
                     cosmic::app::Message::App(Message::SetWeatherData(data.clone()))
                 }
-                Err(err) => cosmic::app::Message::App(Message::Error(err.to_string())),
+                Err(err) => {
+                    cosmic::app::Message::App(Message::Error(AppError::Weather(err.to_string())))
+                }
             },
         )
     }

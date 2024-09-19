@@ -35,6 +35,9 @@ search = Search
 cancel = Cancel
 dummy-dialog = Dummy Dialog
 search = Search
+api-key = API Key
+provide-api-key = Some requests require API Key. Press button below or go to https://geocode.maps.co/join/ to create free account.
+create-account = Create free account
 
 # Nav Page
 hourly-forecast = Hourly Forecast
