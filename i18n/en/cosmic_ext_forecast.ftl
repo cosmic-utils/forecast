@@ -55,3 +55,7 @@ edit = Edit
 
 ## View
 view = View
+
+# Views
+last_updated = Last updated
+data_from_metno = Weather data from the Norwegian Meteorological Institute

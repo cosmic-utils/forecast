@@ -12,6 +12,7 @@ use crate::app::{App, Message};
 use crate::model::weather::Details;
 use crate::model::weather::Timeseries;
 use crate::model::weather::WeatherData;
+use crate::fl;
 
 impl App
 where
@@ -46,11 +47,6 @@ where
                 .format("%_H:%M")
                 .to_string(),
         };
-
-        // For data logging purposes
-        for ts in weather_data.properties.timeseries.iter() {
-            println!("{}", ts.time);
-        }
 
         let timeseries: Vec<Element<Message>> =
             weather_data
@@ -127,10 +123,8 @@ where
                 widget::scrollable(widget::row::with_children(timeseries))
                     .direction(Direction::Horizontal(Properties::default())),
             )
-            .push(widget::text(format!("Last updated: {}", last_updated)))
-            .push(widget::text(
-                "Weather data from the Norwegian Meteorological Institute",
-            ));
+            .push(widget::text(format!("{}: {}", fl!("last_updated"), last_updated)))
+            .push(widget::text(fl!("data_from_metno")));
 
         column.into()
     }
