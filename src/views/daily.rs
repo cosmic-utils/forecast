@@ -23,7 +23,7 @@ where
         let location = self.config.location.clone();
         let spacing = cosmic::theme::active().cosmic().spacing;
         let Some(weather_data) = &self.config_state.weather_data else {
-            return cosmic::widget::text("No weather data").into();
+            return cosmic::widget::text(fl!("no_weather_data")).into();
         };
         let data = weather_data
             .properties
@@ -105,7 +105,7 @@ where
                             .push(
                                 location
                                     .map(widget::text::title4)
-                                    .unwrap_or(widget::text::title4("Unknown location")),
+                                    .unwrap_or(widget::text::title4(fl!("unknown_location"))),
                             )
                             .push_maybe(data.instant.details.air_temperature.map(
                                 |air_temperature| {

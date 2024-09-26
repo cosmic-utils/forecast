@@ -8,6 +8,7 @@ use crate::app::config::SpeedUnits;
 use crate::app::config::TimeFmt;
 use crate::app::{App, Message};
 use crate::model::weather::WeatherData;
+use crate::fl;
 
 impl App
 where
@@ -18,7 +19,7 @@ where
         let location = self.config.location.clone();
         let spacing = cosmic::theme::active().cosmic().spacing;
         let Some(weather_data) = &self.config_state.weather_data else {
-            return cosmic::widget::text("No weather data").into();
+            return cosmic::widget::text(fl!("no_weather_data")).into();
         };
         let data = weather_data
             .properties
@@ -72,7 +73,7 @@ where
                             .push(
                                 location
                                     .map(widget::text::title4)
-                                    .unwrap_or(widget::text::title4("Unknown location")),
+                                    .unwrap_or(widget::text::title4(fl!("unknown_location"))),
                             )
                             .push_maybe(data.instant.details.air_temperature.map(
                                 |air_temperature| {
@@ -87,9 +88,9 @@ where
                     ),
             )
             .push(
-                widget::settings::view_section("Details")
+                widget::settings::view_section(fl!("details"))
                     .add(widget::settings::item(
-                        "Air Pressure",
+                        fl!("air_pressure"),
                         widget::text(format!(
                             "{:.1} {}",
                             self.calculate_pressure_units(
@@ -102,28 +103,28 @@ where
                         )),
                     ))
                     .add(widget::settings::item(
-                        "Cloud Area",
+                        fl!("cloud_area"),
                         widget::text(format!(
                             "{} %",
                             data.instant.details.cloud_area_fraction.unwrap_or(0.0)
                         )),
                     ))
                     .add(widget::settings::item(
-                        "Relative Hummidity",
+                        fl!("relative_hummidity"),
                         widget::text(format!(
                             "{} %",
                             data.instant.details.relative_humidity.unwrap_or(0.0)
                         )),
                     ))
                     .add(widget::settings::item(
-                        "Wind Direction",
+                        fl!("wind_direction"),
                         widget::text(format!(
                             "{} °",
                             data.instant.details.wind_from_direction.unwrap_or(0.0)
                         )),
                     ))
                     .add(widget::settings::item(
-                        "Wind Speed",
+                        fl!("wind_speed"),
                         widget::text(format!(
                             "{:.1} {}",
                             self.calculate_speed_units(
@@ -133,10 +134,8 @@ where
                         )),
                     )),
             )
-            .push(widget::text(format!("Last updated: {}", last_updated)))
-            .push(widget::text(
-                "Weather data from the Norwegian Meteorological Institute",
-            ));
+            .push(widget::text(format!("{}: {}", fl!("last_updated"), last_updated)))
+            .push(widget::text(fl!("data_from_metno")));
 
         column.into()
     }

@@ -57,5 +57,13 @@ edit = Edit
 view = View
 
 # Views
+no_weather_data = No weather data
+unknown_location = Unknown location
 last_updated = Last updated
 data_from_metno = Weather data from the Norwegian Meteorological Institute
+
+air_pressure = Air Pressure
+cloud_area = Cloud Area
+relative_hummidity = Relative Hummidity
+wind_direction = Wind Direction
+wind_speed = Wind Speed
