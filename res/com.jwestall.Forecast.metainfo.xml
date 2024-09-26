@@ -21,6 +21,10 @@
       <caption>Light mode</caption>
     </screenshot>
   </screenshots>
+  <categories>
+    <category>Utility</category>
+    <category>COSMIC</category>
+  </categories>
   <provides>
     <mimetypes>
       <mimetype>text/plain</mimetype>
