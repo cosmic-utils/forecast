@@ -23,14 +23,9 @@
   </screenshots>
   <categories>
     <category>Utility</category>
-    <category>COSMIC</category>
   </categories>
   <provides>
-    <mimetypes>
-      <mimetype>text/plain</mimetype>
-    </mimetypes>
-    <binaries>
-      <binary>cosmic-ext-forecast</binary>
-    </binaries>
+    <id>com.system76.CosmicApplication</id>
+    <binary>forecast</binary>
   </provides>
 </component>
