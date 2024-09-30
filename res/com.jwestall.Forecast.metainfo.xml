@@ -8,6 +8,7 @@
   <update_contact>jacob@jwestall.com</update_contact>
   <url type="homepage">https://github.com/cosmic-utils/forecast</url>
   <url type="bugtracker">https://github.com/cosmic-utils/forecast/issues</url>
+  <content_rating type="oars-1.1" />
   <name>Forecast</name>
   <summary>A simple weather application for the COSMIC™ Desktop</summary>
   <description>
