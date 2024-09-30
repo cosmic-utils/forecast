@@ -5,6 +5,6 @@ Terminal=false
 Type=Application
 StartupNotify=true
 Icon=com.jwestall.Forecast
-Categories=COSMIC;Utility;
+Categories=Utility;
 Keywords=Folder;Manager;
 MimeType=inode/directory;

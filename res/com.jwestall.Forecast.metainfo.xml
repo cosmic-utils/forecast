@@ -15,6 +15,18 @@
   </description>
   <launchable type="desktop-id">com.jwestall.Forecast.desktop</launchable>
   <icon type="remote" height="256" width="256">https://raw.githubusercontent.com/cosmic-utils/forecast/main/res/icons/hicolor/scalable/apps/com.jwestall.Forecast.svg</icon>
+  <releases>
+    <release version="1.0.0" date="2024-09-30">
+        <description>
+            <p>Initial release</p>
+            <ul>
+                <li>View weather information in hourly or daily incriments</li>
+                <li>See detailed information about the current weather conditions</li>
+                <li>Plan your week ahead with a simple and easy to read forecast</li>
+            </ul>
+        </description>
+    </release>
+  </releases>
   <screenshots>
     <screenshot type="default">
       <image>https://raw.githubusercontent.com/cosmic-utils/forecast/main/screenshots/window.png</image>
@@ -26,6 +38,6 @@
   </categories>
   <provides>
     <id>com.system76.CosmicApplication</id>
-    <binary>forecast</binary>
+    <binary>cosmic-ext-forecast</binary>
   </provides>
 </component>
