@@ -6,6 +6,11 @@
 </div>
 
 # Installation
+
+[![Get it on Flathub](https://flathub.org/api/badge?svg&locale=en)](https://flathub.org/apps/com.jwestall.Forecast)
+
+## Manually
+
 ```
 git clone https://github.com/cosmic-utils/forecast.git
 cd forecast
