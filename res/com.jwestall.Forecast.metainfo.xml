@@ -4,18 +4,50 @@
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-only</project_license>
   <project_group>COSMIC</project_group>
-  <developer_name>Jacob Westall</developer_name>
+  <developer id="com.jwestall">
+    <name translate="no">Jacob Westall</name>
+  </developer>
   <update_contact>jacob@jwestall.com</update_contact>
   <url type="homepage">https://github.com/cosmic-utils/forecast</url>
+  <url type="vcs-browser">https://github.com/cosmic-utils/forecast</url>
   <url type="bugtracker">https://github.com/cosmic-utils/forecast/issues</url>
+  <url type="contact">https://mathstodon.xyz/@jwestall_com</url>
+  <url type="donation">https://ko-fi.com/jwestall</url>
+  <url type="translate">https://github.com/cosmic-utils/forecast/tree/main/i18n</url>
+  <url type="contribute">https://github.com/cosmic-utils/forecast</url>
   <content_rating type="oars-1.1" />
   <name>Forecast</name>
-  <summary>A simple weather application for the COSMIC™ Desktop</summary>
+  <summary>View weather predictions</summary>
   <description>
-    <p>A simple weather application for the COSMIC™ Desktop</p>
+    <p>Find out what the weather is going to be like with this simple weather application for the COSMIC™ Desktop.</p>
   </description>
   <launchable type="desktop-id">com.jwestall.Forecast.desktop</launchable>
   <icon type="remote" height="256" width="256">https://raw.githubusercontent.com/cosmic-utils/forecast/main/res/icons/hicolor/scalable/apps/com.jwestall.Forecast.svg</icon>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/cosmic-utils/forecast/main/screenshots/window.png</image>
+      <caption>Light mode</caption>
+    </screenshot>
+  </screenshots>
+  <branding>
+    <color type="primary" scheme_preference="light">#30ccff</color>
+    <color type="primary" scheme_preference="dark">#00a2ac</color>
+  </branding>
+  <requires>
+    <display_length compare="ge">360</display_length>
+    <internet>always</internet>
+  </requires>
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+  </supports>
+  <categories>
+    <category>Utility</category>
+  </categories>
+  <provides>
+    <id>com.system76.CosmicApplication</id>
+    <binary>cosmic-ext-forecast</binary>
+  </provides>
   <releases>
     <release version="1.0.0" date="2024-09-30">
         <description>
@@ -28,17 +60,4 @@
         </description>
     </release>
   </releases>
-  <screenshots>
-    <screenshot type="default">
-      <image>https://raw.githubusercontent.com/cosmic-utils/forecast/main/screenshots/window.png</image>
-      <caption>Light mode</caption>
-    </screenshot>
-  </screenshots>
-  <categories>
-    <category>Utility</category>
-  </categories>
-  <provides>
-    <id>com.system76.CosmicApplication</id>
-    <binary>cosmic-ext-forecast</binary>
-  </provides>
 </component>
