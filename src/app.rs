@@ -302,7 +302,7 @@ impl cosmic::Application for App {
 
                     for location in self.app_locations.iter() {
                         locations_btns = locations_btns.push(
-                            widget::button(location.as_ref())
+                            widget::button::standard(location.as_ref())
                                 .width(Length::Fill)
                                 .on_press(Message::SetLocation(location.clone()))
                                 .style(theme::Button::Link),
@@ -719,7 +719,7 @@ where
         };
 
         widget::settings::view_column(vec![
-            widget::settings::view_section(fl!("general"))
+            widget::settings::section().title(fl!("general"))
                 .add(
                     widget::settings::item::builder(fl!("units")).control(widget::dropdown(
                         &self.units,
@@ -776,7 +776,7 @@ where
                     ),
                 )
                 .into(),
-            widget::settings::view_section(fl!("appearance"))
+            widget::settings::section().title(fl!("appearance"))
                 .add(
                     widget::settings::item::builder(fl!("theme")).control(widget::dropdown(
                         &self.app_themes,

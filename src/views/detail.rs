@@ -88,7 +88,7 @@ where
                     ),
             )
             .push(
-                widget::settings::view_section(fl!("details"))
+                widget::settings::section().title(fl!("details"))
                     .add(widget::settings::item(
                         fl!("air_pressure"),
                         widget::text(format!(
