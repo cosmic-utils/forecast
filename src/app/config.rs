@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::model::weather::WeatherData;
 
-use super::App;
+use super::{App, NavPage};
 
 pub const CONFIG_VERSION: u64 = 1;
 
@@ -85,6 +85,7 @@ pub struct WeatherConfig {
     pub speed_units: SpeedUnits,
     pub app_theme: AppTheme,
     pub api_key: String,
+    pub default_page: NavPage,
 }
 
 impl Default for WeatherConfig {
@@ -99,6 +100,7 @@ impl Default for WeatherConfig {
             speed_units: SpeedUnits::MetersPerSecond,
             app_theme: AppTheme::System,
             api_key: String::default(),
+            default_page: NavPage::HourlyView,
         }
     }
 }

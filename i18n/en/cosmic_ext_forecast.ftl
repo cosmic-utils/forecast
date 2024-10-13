@@ -22,6 +22,7 @@ appearance = Appearance
 theme = Theme
 units = Units
 time-format = Time Format
+default-page = Default Page
 
 ## App Themes
 dark = Dark

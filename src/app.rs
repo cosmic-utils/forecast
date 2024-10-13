@@ -1,5 +1,5 @@
 use config::{
-    AppError, AppTheme, PressureUnits, SpeedUnits, TimeFmt, WeatherConfigState, CONFIG_VERSION,
+    AppError, AppTheme, PressureUnits, SpeedUnits, TimeFmt, WeatherConfigState, CONFIG_VERSION
 };
 use cosmic::cosmic_config::Update;
 use cosmic::cosmic_theme::ThemeMode;
@@ -17,6 +17,7 @@ use cosmic::{
 };
 use std::any::TypeId;
 use std::collections::{HashMap, VecDeque};
+use serde::{Deserialize, Serialize};
 
 pub mod config;
 pub mod icon_cache;
@@ -48,6 +49,7 @@ pub enum Message {
     PressureUnits(PressureUnits),
     SpeedUnits(SpeedUnits),
     AppTheme(AppTheme),
+    DefaultPage(NavPage),
     DialogComplete((String, String)),
     DialogCancel,
     DialogUpdate(DialogPage),
@@ -113,7 +115,7 @@ impl MenuAction for Action {
     }
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub enum NavPage {
     HourlyView,
     DailyView,
@@ -158,6 +160,7 @@ pub struct App {
     timefmt: Vec<String>,
     pressure_units: Vec<String>,
     speed_units: Vec<String>,
+    pages: Vec<String>,
     api_key: String,
     app_themes: Vec<String>,
     dialog_pages: VecDeque<DialogPage>,
@@ -188,7 +191,7 @@ impl cosmic::Application for App {
                 .text(nav_page.title())
                 .data::<NavPage>(nav_page)
                 .id();
-            if nav_page == NavPage::HourlyView {
+            if nav_page == flags.config.default_page {
                 nav_model.activate(id);
             }
         }
@@ -204,6 +207,7 @@ impl cosmic::Application for App {
         ];
         let app_speed_units = vec!["m/s".to_string(), "mph".to_string(), "km/h".to_string()];
         let app_themes = vec![fl!("light"), fl!("dark"), fl!("system")];
+        let app_pages = vec![fl!("hourly-forecast"), fl!("daily-forecast"), fl!("details"),];
 
         let mut app = App {
             core,
@@ -219,6 +223,7 @@ impl cosmic::Application for App {
             timefmt: app_timefmt,
             pressure_units: app_pressure_units,
             speed_units: app_speed_units,
+            pages: app_pages,
             app_themes,
             dialog_pages: VecDeque::new(),
             dialog_page_text: widget::Id::unique(),
@@ -499,6 +504,10 @@ impl cosmic::Application for App {
                 commands.push(self.save_config());
                 commands.push(self.save_theme());
             }
+            Message::DefaultPage(page) => {
+                self.config.default_page = page;
+                commands.push(self.save_config());
+            }
             Message::DialogComplete((city, key)) => {
                 let command =
                     Command::perform(Location::get_location_data(city, key), |data| match data {
@@ -718,8 +727,27 @@ where
             config::AppTheme::System => 2,
         };
 
+        let selected_page = match self.config.default_page {
+            NavPage::HourlyView => 0,
+            NavPage::DailyView => 1,
+            NavPage::Details => 2,
+        };
+
         widget::settings::view_column(vec![
             widget::settings::section().title(fl!("general"))
+                .add(
+                    widget::settings::item::builder(fl!("default-page")).control(widget::dropdown(
+                        &self.pages,
+                        Some(selected_page),
+                        move |index| {
+                            Message::DefaultPage(match index {
+                                0 => NavPage::HourlyView,
+                                1 => NavPage::DailyView,
+                                _ => NavPage::Details,
+                            })
+                        },
+                    )),
+                )
                 .add(
                     widget::settings::item::builder(fl!("units")).control(widget::dropdown(
                         &self.units,
