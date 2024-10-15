@@ -49,6 +49,14 @@
     <binary>cosmic-ext-forecast</binary>
   </provides>
   <releases>
+    <release version="1.1.0" date="2024-10-15">
+        <description>
+            <p>Options update</p>
+            <ul>
+                <li>Add option to set default view when opening the app</li>
+            </ul>
+        </description>
+    </release>
     <release version="1.0.0" date="2024-09-30">
         <description>
             <p>Initial release</p>
@@ -56,14 +64,6 @@
                 <li>View weather information in hourly or daily incriments</li>
                 <li>See detailed information about the current weather conditions</li>
                 <li>Plan your week ahead with a simple and easy to read forecast</li>
-            </ul>
-        </description>
-    </release>
-    <release version="1.1.0" date="2024-10-15">
-        <description>
-            <p>Options update</p>
-            <ul>
-                <li>Add option to set default view when opening the app</li>
             </ul>
         </description>
     </release>
