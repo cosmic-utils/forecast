@@ -1,5 +1,4 @@
 use chrono::Local;
-use cosmic::prelude::CollectionWidget;
 use cosmic::widget;
 use cosmic::Element;
 
@@ -7,8 +6,8 @@ use crate::app::config::PressureUnits;
 use crate::app::config::SpeedUnits;
 use crate::app::config::TimeFmt;
 use crate::app::{App, Message};
-use crate::model::weather::WeatherData;
 use crate::fl;
+use crate::model::weather::WeatherData;
 
 impl App
 where
@@ -82,13 +81,14 @@ where
                                         self.set_temp_units(air_temperature)
                                     ))
                                     .size(42)
-                                    .style(cosmic::style::Text::Accent)
+                                    .class(cosmic::style::Text::Accent)
                                 },
                             )),
                     ),
             )
             .push(
-                widget::settings::section().title(fl!("details"))
+                widget::settings::section()
+                    .title(fl!("details"))
                     .add(widget::settings::item(
                         fl!("air_pressure"),
                         widget::text(format!(
@@ -134,7 +134,11 @@ where
                         )),
                     )),
             )
-            .push(widget::text(format!("{}: {}", fl!("last_updated"), last_updated)))
+            .push(widget::text(format!(
+                "{}: {}",
+                fl!("last_updated"),
+                last_updated
+            )))
             .push(widget::text(fl!("data_from_metno")));
 
         column.into()
