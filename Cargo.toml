@@ -7,27 +7,36 @@ edition = "2021"
 log = "0.4.21"
 open = "5.1.2"
 serde = "1.0.197"
-# Internationalization
-i18n-embed = { version = "0.15.0", features = [
-    "fluent-system",
-    "desktop-requester",
-] }
-i18n-embed-fl = "0.9.1"
-rust-embed = "8"
-reqwest = { version = "0.12.3", features = ["json", "gzip", "deflate"] }
-tokio = { version = "1.37.0", features = ["fs"] }
-chrono = { version = "0.4.38", features = ["serde"] }
 bytes = "1.7.1"
 include_dir = "0.7.4"
+i18n-embed-fl = "0.9.1"
+rust-embed = "8"
 
 [dependencies.libcosmic]
 git = "https://github.com/pop-os/libcosmic"
 default-features = false
-features = ["debug", "winit", "tokio", "image"]
+features = [
+    "debug",
+    "winit",
+    "wgpu",
+    "tokio",
+    "image",
+    "desktop",
+    "multi-window",
+]
 
-[build-dependencies]
-vergen = { version = "8", features = ["git", "gitcl"] }
+[dependencies.i18n-embed]
+version = "0.15.0"
+features = ["fluent-system", "desktop-requester"]
 
-[features]
-default = ["wgpu"]
-wgpu = ["libcosmic/wgpu"]
+[dependencies.reqwest]
+version = "0.12.3"
+features = ["json", "gzip", "deflate"]
+
+[dependencies.tokio]
+version = "1.37.0"
+features = ["fs"]
+
+[dependencies.chrono]
+version = "0.4.38"
+features = ["serde"]

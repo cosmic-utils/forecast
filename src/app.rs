@@ -1,23 +1,24 @@
 use config::{
-    AppError, AppTheme, PressureUnits, SpeedUnits, TimeFmt, WeatherConfigState, CONFIG_VERSION
+    AppError, AppTheme, PressureUnits, SpeedUnits, TimeFmt, WeatherConfigState, CONFIG_VERSION,
 };
+use cosmic::app::about::About;
 use cosmic::cosmic_config::Update;
 use cosmic::cosmic_theme::ThemeMode;
 use cosmic::iced::keyboard::{Key, Modifiers};
 use cosmic::widget::menu::action::MenuAction;
 use cosmic::widget::menu::key_bind::KeyBind;
 use cosmic::{
-    app::{Command, Core},
+    app::{Core, Task},
     cosmic_config::{self, CosmicConfigEntry},
     cosmic_theme, executor,
-    iced::{event, keyboard::Event as KeyEvent, window, Alignment, Event, Length, Subscription},
+    iced::{event, keyboard::Event as KeyEvent, window, Event, Length, Subscription},
     theme, widget,
     widget::{column, container, nav_bar, scrollable},
     ApplicationExt, Apply, Element,
 };
+use serde::{Deserialize, Serialize};
 use std::any::TypeId;
 use std::collections::{HashMap, VecDeque};
-use serde::{Deserialize, Serialize};
 
 pub mod config;
 pub mod icon_cache;
@@ -40,7 +41,6 @@ pub enum Message {
     Quit,
     SystemThemeModeChange,
     ToggleContextPage(ContextPage),
-    LaunchUrl(String),
     Key(Modifiers, Key),
     Modifiers(Modifiers),
     Config(WeatherConfig),
@@ -60,6 +60,7 @@ pub enum Message {
     SaveApiKey,
     OpenWebsite(String),
     Error(AppError),
+    Cosmic(cosmic::app::cosmic::Message),
 }
 
 #[derive(Clone, Debug)]
@@ -146,6 +147,7 @@ impl NavPage {
 
 pub struct App {
     core: Core,
+    about: About,
     nav_model: nav_bar::Model,
     key_binds: HashMap<KeyBind, Action>,
     modifiers: Modifiers,
@@ -182,7 +184,7 @@ impl cosmic::Application for App {
         &mut self.core
     }
 
-    fn init(core: Core, flags: Self::Flags) -> (Self, Command<Self::Message>) {
+    fn init(core: Core, flags: Self::Flags) -> (Self, Task<Self::Message>) {
         let mut nav_model = nav_bar::Model::default();
         for &nav_page in NavPage::all() {
             let id = nav_model
@@ -207,10 +209,25 @@ impl cosmic::Application for App {
         ];
         let app_speed_units = vec!["m/s".to_string(), "mph".to_string(), "km/h".to_string()];
         let app_themes = vec![fl!("light"), fl!("dark"), fl!("system")];
-        let app_pages = vec![fl!("hourly-forecast"), fl!("daily-forecast"), fl!("details"),];
+        let app_pages = vec![
+            fl!("hourly-forecast"),
+            fl!("daily-forecast"),
+            fl!("details"),
+        ];
+
+        let about = About::default()
+            .set_application_name(fl!("cosmic-ext-forecast"))
+            .set_application_icon(Self::APP_ID)
+            .set_developer_name("Jacob Westall")
+            .set_version("1.1.0")
+            .set_license_type("GPL-3.0")
+            .set_repository_url("https://github.com/cosmic-utils/forecast")
+            .set_support_url("https://github.com/cosmic-utils/forecast")
+            .set_developers([("Jacob Westall".into(), "jacob@jwestall.com".into())]);
 
         let mut app = App {
             core,
+            about,
             nav_model,
             key_binds: key_binds(),
             modifiers: Modifiers::empty(),
@@ -234,7 +251,7 @@ impl cosmic::Application for App {
         // Default location to Denver if empty
         // TODO: Default to user location
         if app.config.location.is_none() {
-            let command = Command::perform(
+            let command = Task::perform(
                 Location::get_location_data(String::from("Denver"), app.api_key.clone()),
                 |data| match data {
                     Ok(data) => {
@@ -262,9 +279,20 @@ impl cosmic::Application for App {
         {
             commands.push(app.update_weather_data());
         }
-        commands.push(app.update_title());
 
-        (app, Command::batch(commands))
+        let window_title = fl!("cosmic-ext-forecast").to_string();
+
+        app.set_header_title(window_title.clone());
+
+        if let Some(id) = app.core.main_window_id() {
+            commands.push(app.set_window_title(window_title, id));
+        }
+
+        (app, Task::batch(commands))
+    }
+
+    fn about(&self) -> Option<&About> {
+        Some(&self.about)
     }
 
     fn nav_model(&self) -> Option<&nav_bar::Model> {
@@ -277,7 +305,7 @@ impl cosmic::Application for App {
         }
 
         Some(match self.context_page {
-            ContextPage::About => self.about(),
+            ContextPage::About => self.about_view()?.map(Message::Cosmic),
             ContextPage::Settings => self.settings(),
         })
     }
@@ -310,7 +338,7 @@ impl cosmic::Application for App {
                             widget::button::standard(location.as_ref())
                                 .width(Length::Fill)
                                 .on_press(Message::SetLocation(location.clone()))
-                                .style(theme::Button::Link),
+                                .class(theme::Button::Link),
                         );
                     }
 
@@ -381,10 +409,10 @@ impl cosmic::Application for App {
         vec![menu::menu_bar(&self.key_binds)]
     }
 
-    fn on_nav_select(&mut self, id: nav_bar::Id) -> Command<Message> {
+    fn on_nav_select(&mut self, id: nav_bar::Id) -> Task<Message> {
         self.nav_model.activate(id);
 
-        Command::none()
+        Task::none()
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {
@@ -392,7 +420,7 @@ impl cosmic::Application for App {
         struct ThemeSubscription;
 
         let subscriptions = vec![
-            event::listen_with(|event, status| match event {
+            event::listen_with(|event, status, _win_id| match event {
                 Event::Keyboard(KeyEvent::KeyPressed { key, modifiers, .. }) => match status {
                     event::Status::Ignored => Some(Message::Key(modifiers, key)),
                     event::Status::Captured => None,
@@ -437,9 +465,12 @@ impl cosmic::Application for App {
         Subscription::batch(subscriptions)
     }
 
-    fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
+    fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
         let mut commands = vec![];
         match message {
+            Message::Cosmic(message) => commands.push(cosmic::app::command::message(
+                cosmic::app::message::cosmic(message),
+            )),
             Message::ChangeCity => {
                 // TODO
                 self.dialog_pages
@@ -450,7 +481,9 @@ impl cosmic::Application for App {
                 self.dialog_pages.push_back(DialogPage::ApiKey)
             }
             Message::Quit => {
-                return window::close(window::Id::MAIN);
+                if let Some(id) = self.core.main_window_id() {
+                    return window::close(id);
+                }
             }
             Message::ToggleContextPage(context_page) => {
                 if self.context_page == context_page {
@@ -461,12 +494,6 @@ impl cosmic::Application for App {
                 }
                 self.set_context_title(context_page.clone().title());
             }
-            Message::LaunchUrl(url) => match open::that_detached(&url) {
-                Ok(()) => {}
-                Err(err) => {
-                    log::warn!("failed to open {:?}: {}", url, err);
-                }
-            },
             Message::Key(modifiers, key) => {
                 for (key_bind, action) in self.key_binds.iter() {
                     if key_bind.matches(modifiers, &key) {
@@ -510,7 +537,7 @@ impl cosmic::Application for App {
             }
             Message::DialogComplete((city, key)) => {
                 let command =
-                    Command::perform(Location::get_location_data(city, key), |data| match data {
+                    Task::perform(Location::get_location_data(city, key), |data| match data {
                         Ok(data) => cosmic::app::Message::App(Message::UpdateLocations(data)),
                         Err(err) => cosmic::app::Message::App(Message::Error(AppError::Location(
                             err.to_string(),
@@ -574,7 +601,7 @@ impl cosmic::Application for App {
             }
         }
 
-        Command::batch(commands)
+        Task::batch(commands)
     }
 
     fn view(&self) -> Element<Self::Message> {
@@ -592,7 +619,7 @@ impl cosmic::Application for App {
             .width(Length::Fill)
             .max_width(1000)
             .apply(container)
-            .center_x()
+            .center_x(Length::Fill)
             .width(Length::Fill)
             .apply(scrollable)
             .into()
@@ -603,44 +630,38 @@ impl App
 where
     Self: cosmic::Application,
 {
-    fn update_title(&mut self) -> Command<Message> {
-        let window_title = fl!("cosmic-ext-forecast").to_string();
-
-        self.set_header_title(window_title.clone());
-        self.set_window_title(window_title)
-    }
-
-    fn save_config(&mut self) -> Command<Message> {
+    fn save_config(&mut self) -> Task<Message> {
         if let Some(ref config_handler) = self.config_handler {
             if let Err(err) = self.config.write_entry(config_handler) {
                 log::error!("failed to save config: {}", err);
             }
         }
 
-        Command::none()
+        Task::none()
     }
-    fn save_config_state(&mut self) -> Command<Message> {
+
+    fn save_config_state(&mut self) -> Task<Message> {
         if let Some(ref config_state_handler) = self.config_state_handler {
             if let Err(err) = self.config_state.write_entry(config_state_handler) {
                 log::error!("failed to save config: {}", err);
             }
         }
 
-        Command::none()
+        Task::none()
     }
 
-    fn save_theme(&self) -> Command<Message> {
+    fn save_theme(&self) -> Task<Message> {
         cosmic::app::command::set_theme(self.config.app_theme.theme())
     }
 
-    fn update_weather_data(&self) -> Command<Message> {
+    fn update_weather_data(&self) -> Task<Message> {
         let last_request = self.config_state.last_request.map(|lr| lr.to_utc());
 
         let (Some(lat), Some(long)) = (
             self.config.latitude.as_ref(),
             self.config.longitude.as_ref(),
         ) else {
-            return Command::none();
+            return Task::none();
         };
 
         let coords = (
@@ -648,7 +669,7 @@ where
             long.parse::<f64>().expect("Error parsing string to f64"),
         );
 
-        Command::perform(
+        Task::perform(
             WeatherData::get_weather_data(coords, last_request),
             |data| match data {
                 Ok(data) => {
@@ -664,37 +685,6 @@ where
                 }
             },
         )
-    }
-
-    fn about(&self) -> Element<Message> {
-        let spacing = theme::active().cosmic().spacing;
-        let repository = "https://github.com/cosmic-utils/forecast";
-        let hash = env!("VERGEN_GIT_SHA");
-        let short_hash: String = hash.chars().take(7).collect();
-        let date = env!("VERGEN_GIT_COMMIT_DATE");
-        widget::column::with_children(vec![
-            widget::svg(widget::svg::Handle::from_memory(
-                &include_bytes!("../res/icons/hicolor/scalable/apps/com.jwestall.Forecast.svg")[..],
-            ))
-            .into(),
-            widget::text::title3(fl!("cosmic-ext-forecast")).into(),
-            widget::button::link(repository)
-                .on_press(Message::LaunchUrl(repository.to_string()))
-                .padding(spacing.space_none)
-                .into(),
-            widget::button::link(fl!(
-                "git-description",
-                hash = short_hash.as_str(),
-                date = date
-            ))
-            .on_press(Message::LaunchUrl(format!("{repository}/commits/{hash}")))
-            .padding(spacing.space_none)
-            .into(),
-        ])
-        .align_items(Alignment::Center)
-        .spacing(spacing.space_xxs)
-        .width(Length::Fill)
-        .into()
     }
 
     fn settings(&self) -> Element<Message> {
@@ -734,7 +724,8 @@ where
         };
 
         widget::settings::view_column(vec![
-            widget::settings::section().title(fl!("general"))
+            widget::settings::section()
+                .title(fl!("general"))
                 .add(
                     widget::settings::item::builder(fl!("default-page")).control(widget::dropdown(
                         &self.pages,
@@ -804,7 +795,8 @@ where
                     ),
                 )
                 .into(),
-            widget::settings::section().title(fl!("appearance"))
+            widget::settings::section()
+                .title(fl!("appearance"))
                 .add(
                     widget::settings::item::builder(fl!("theme")).control(widget::dropdown(
                         &self.app_themes,

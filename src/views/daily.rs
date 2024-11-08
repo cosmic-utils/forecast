@@ -2,17 +2,16 @@ use chrono::DateTime;
 use chrono::Local;
 use cosmic::iced::Alignment;
 use cosmic::iced_widget::scrollable::Direction;
-use cosmic::iced_widget::scrollable::Properties;
-use cosmic::prelude::CollectionWidget;
+use cosmic::iced_widget::scrollable::Scrollbar;
 use cosmic::widget;
 use cosmic::Element;
 
 use crate::app::config::TimeFmt;
 use crate::app::{App, Message};
+use crate::fl;
 use crate::model::weather::Details;
 use crate::model::weather::Timeseries;
 use crate::model::weather::WeatherData;
-use crate::fl;
 
 impl App
 where
@@ -48,46 +47,41 @@ where
                 .to_string(),
         };
 
-        let timeseries: Vec<Element<Message>> =
-            weather_data
-                .properties
-                .timeseries
-                .iter()
-                .filter(|timeseries| self.check_time(timeseries, current_time))
-                .map(|ts| {
-                    let data_6_hrs = match &ts.data.next_6_hours {
-                        Some(data) => match &data.details {
-                            Some(details) => details,
-                            None => &Details::default()
-                        },
-                        None => &Details::default()
-                    };
+        let timeseries: Vec<Element<Message>> = weather_data
+            .properties
+            .timeseries
+            .iter()
+            .filter(|timeseries| self.check_time(timeseries, current_time))
+            .map(|ts| {
+                let data_6_hrs = match &ts.data.next_6_hours {
+                    Some(data) => match &data.details {
+                        Some(details) => details,
+                        None => &Details::default(),
+                    },
+                    None => &Details::default(),
+                };
 
-                    widget::column()
-                        .align_items(Alignment::Center)
-                        .padding(spacing.space_xs)
-                        .spacing(spacing.space_xs)
-                        .push(widget::text(self.format_date(ts)))
-                        .push_maybe(ts.data.next_12_hours.as_ref().map(|next_12_hours| {
-                            let symbol = next_12_hours.summary.symbol_code.clone();
-                            widget::icon(WeatherData::icon_handle(symbol)).size(50)
-                        }))
-                        .push_maybe(data_6_hrs.air_temperature_max.map(
-                            |air_temperature_max| {
-                                widget::text(format!("{}°", self.set_temp_units(air_temperature_max)))
-                                    .size(24)
-                                    .style(cosmic::style::Text::Accent)
-                            },
-                        ))
-                        .push_maybe(data_6_hrs.air_temperature_min.map(
-                            |air_temperature_min| {
-                                widget::text(format!("{}°", self.set_temp_units(air_temperature_min)))
-                                    .size(24)
-                            },
-                        ))
-                        .into()
-                })
-                .collect();
+                widget::column()
+                    .align_x(Alignment::Center)
+                    .padding(spacing.space_xs)
+                    .spacing(spacing.space_xs)
+                    .push(widget::text(self.format_date(ts)))
+                    .push_maybe(ts.data.next_12_hours.as_ref().map(|next_12_hours| {
+                        let symbol = next_12_hours.summary.symbol_code.clone();
+                        widget::icon(WeatherData::icon_handle(symbol)).size(50)
+                    }))
+                    .push_maybe(data_6_hrs.air_temperature_max.map(|air_temperature_max| {
+                        widget::text(format!("{}°", self.set_temp_units(air_temperature_max)))
+                            .size(24)
+                            .class(cosmic::style::Text::Accent)
+                    }))
+                    .push_maybe(data_6_hrs.air_temperature_min.map(|air_temperature_min| {
+                        widget::text(format!("{}°", self.set_temp_units(air_temperature_min)))
+                            .size(24)
+                    }))
+                    .into()
+            })
+            .collect();
 
         let column = widget::column()
             .padding(spacing.space_xs)
@@ -114,16 +108,20 @@ where
                                         self.set_temp_units(air_temperature)
                                     ))
                                     .size(42)
-                                    .style(cosmic::style::Text::Accent)
+                                    .class(cosmic::style::Text::Accent)
                                 },
                             )),
                     ),
             )
             .push(
                 widget::scrollable(widget::row::with_children(timeseries))
-                    .direction(Direction::Horizontal(Properties::default())),
+                    .direction(Direction::Horizontal(Scrollbar::default())),
             )
-            .push(widget::text(format!("{}: {}", fl!("last_updated"), last_updated)))
+            .push(widget::text(format!(
+                "{}: {}",
+                fl!("last_updated"),
+                last_updated
+            )))
             .push(widget::text(fl!("data_from_metno")));
 
         column.into()
@@ -151,7 +149,6 @@ where
             timezone + 12
         };
 
-        timeseries.time > current_time
-        && timehour == comparetime
+        timeseries.time > current_time && timehour == comparetime
     }
 }

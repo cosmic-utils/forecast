@@ -1,17 +1,16 @@
 use chrono::Local;
 use cosmic::iced::Alignment;
 use cosmic::iced_widget::scrollable::Direction;
-use cosmic::iced_widget::scrollable::Properties;
-use cosmic::prelude::CollectionWidget;
+use cosmic::iced_widget::scrollable::Scrollbar;
 use cosmic::widget;
 use cosmic::Element;
 
 use crate::app::config::TimeFmt;
 use crate::app::config::Units;
 use crate::app::{App, Message};
+use crate::fl;
 use crate::model::weather::Timeseries;
 use crate::model::weather::WeatherData;
-use crate::fl;
 
 impl App
 where
@@ -55,7 +54,7 @@ where
                 .filter(|timeseries| timeseries.time >= current_time)
                 .map(|ts| {
                     widget::column()
-                        .align_items(Alignment::Center)
+                        .align_x(Alignment::Center)
                         .padding(spacing.space_xs)
                         .spacing(spacing.space_xs)
                         .push(widget::text(self.format_time(ts)))
@@ -67,7 +66,7 @@ where
                             |air_temperature| {
                                 widget::text(format!("{}°", self.set_temp_units(air_temperature)))
                                     .size(24)
-                                    .style(cosmic::style::Text::Accent)
+                                    .class(cosmic::style::Text::Accent)
                             },
                         ))
                         .into()
@@ -99,16 +98,20 @@ where
                                         self.set_temp_units(air_temperature)
                                     ))
                                     .size(42)
-                                    .style(cosmic::style::Text::Accent)
+                                    .class(cosmic::style::Text::Accent)
                                 },
                             )),
                     ),
             )
             .push(
                 widget::scrollable(widget::row::with_children(timeseries))
-                    .direction(Direction::Horizontal(Properties::default())),
+                    .direction(Direction::Horizontal(Scrollbar::default())),
             )
-            .push(widget::text(format!("{}: {}", fl!("last_updated"), last_updated)))
+            .push(widget::text(format!(
+                "{}: {}",
+                fl!("last_updated"),
+                last_updated
+            )))
             .push(widget::text(fl!("data_from_metno")));
 
         column.into()
