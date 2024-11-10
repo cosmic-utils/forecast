@@ -13,7 +13,11 @@ twenty-four-hr  = 24-timmar
 
 ## Om
 about = Om
-git-description = Git commit {$hash} på {$date}
+## Länkar
+repository = Förråd
+support = Support
+website = Hemsida
+## Utvecklare
 
 ## Inställningar
 settings = Inställningar
