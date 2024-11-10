@@ -13,7 +13,9 @@ twenty-four-hr  = 24-hour
 
 ## About
 about = About
-git-description = Git commit {$hash} on {$date}
+repository = Repository
+support = Support
+website = Website
 
 ## Settings
 settings = Settings

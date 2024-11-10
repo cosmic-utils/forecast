@@ -1,10 +1,10 @@
 use config::{
     AppError, AppTheme, PressureUnits, SpeedUnits, TimeFmt, WeatherConfigState, CONFIG_VERSION,
 };
-use cosmic::app::about::About;
 use cosmic::cosmic_config::Update;
 use cosmic::cosmic_theme::ThemeMode;
 use cosmic::iced::keyboard::{Key, Modifiers};
+use cosmic::widget::about::About;
 use cosmic::widget::menu::action::MenuAction;
 use cosmic::widget::menu::key_bind::KeyBind;
 use cosmic::{
@@ -60,7 +60,6 @@ pub enum Message {
     SaveApiKey,
     OpenWebsite(String),
     Error(AppError),
-    Cosmic(cosmic::app::cosmic::Message),
 }
 
 #[derive(Clone, Debug)]
@@ -216,14 +215,19 @@ impl cosmic::Application for App {
         ];
 
         let about = About::default()
-            .set_application_name(fl!("cosmic-ext-forecast"))
-            .set_application_icon(Self::APP_ID)
-            .set_developer_name("Jacob Westall")
-            .set_version("1.1.0")
-            .set_license_type("GPL-3.0")
-            .set_repository_url("https://github.com/cosmic-utils/forecast")
-            .set_support_url("https://github.com/cosmic-utils/forecast")
-            .set_developers([("Jacob Westall".into(), "jacob@jwestall.com".into())]);
+            .name(fl!("cosmic-ext-forecast"))
+            .icon(Self::APP_ID)
+            .version("1.1.0")
+            .author("Jacob Westall")
+            .license("GPL-3.0")
+            .links([
+                (fl!("support"), "https://github.com/cosmic-utils/forecast"),
+                (
+                    fl!("repository"),
+                    "https://github.com/cosmic-utils/forecast",
+                ),
+            ])
+            .developers([("Jacob Westall".into(), "jacob@jwestall.com".into())]);
 
         let mut app = App {
             core,
@@ -291,10 +295,6 @@ impl cosmic::Application for App {
         (app, Task::batch(commands))
     }
 
-    fn about(&self) -> Option<&About> {
-        Some(&self.about)
-    }
-
     fn nav_model(&self) -> Option<&nav_bar::Model> {
         Some(&self.nav_model)
     }
@@ -305,7 +305,7 @@ impl cosmic::Application for App {
         }
 
         Some(match self.context_page {
-            ContextPage::About => self.about_view()?.map(Message::Cosmic),
+            ContextPage::About => widget::about(&self.about, Message::OpenWebsite),
             ContextPage::Settings => self.settings(),
         })
     }
@@ -347,7 +347,8 @@ impl cosmic::Application for App {
                     );
                 }
 
-                widget::dialog(fl!("change-city"))
+                widget::dialog()
+                    .title(fl!("change-city"))
                     .primary_action(widget::button::suggested(fl!("search")).on_press(
                         Message::DialogComplete((city.to_string(), self.api_key.clone())),
                     ))
@@ -369,7 +370,8 @@ impl cosmic::Application for App {
                         Message::OpenWebsite("https://geocode.maps.co/join/".to_string()),
                     ));
 
-                widget::dialog(fl!("api-key"))
+                widget::dialog()
+                    .title(fl!("api-key"))
                     .primary_action(
                         widget::button::suggested(fl!("save")).on_press(Message::SaveApiKey),
                     )
@@ -394,7 +396,7 @@ impl cosmic::Application for App {
                     }
                 }
 
-                widget::dialog("")
+                widget::dialog()
                     .secondary_action(
                         widget::button::standard(fl!("cancel")).on_press(Message::DialogCancel),
                     )
@@ -468,9 +470,6 @@ impl cosmic::Application for App {
     fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
         let mut commands = vec![];
         match message {
-            Message::Cosmic(message) => commands.push(cosmic::app::command::message(
-                cosmic::app::message::cosmic(message),
-            )),
             Message::ChangeCity => {
                 // TODO
                 self.dialog_pages
