@@ -13,11 +13,11 @@ twenty-four-hr  = 24-timmar
 
 ## Om
 about = Om
-##Länkar
+## Länkar
 repository = Förråd
 support = Support
 website = Hemsida
-##Utvecklare
+## Utvecklare
 
 ## Inställningar
 settings = Inställningar
