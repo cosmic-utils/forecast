@@ -7,4 +7,4 @@ StartupNotify=true
 Icon=com.jwestall.Forecast
 Categories=Utility;
 Keywords=Folder;Manager;
-MimeType=inode/directory;
+MimeType=
