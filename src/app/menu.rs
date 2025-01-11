@@ -13,15 +13,18 @@ pub fn menu_bar<'a>(key_binds: &HashMap<KeyBind, Action>) -> Element<'a, Message
     MenuBar::new(vec![
         Tree::with_children(
             root(fl!("file")),
-            items(key_binds, vec![Item::Button(fl!("quit"), Action::Quit)]),
+            items(
+                key_binds,
+                vec![Item::Button(fl!("quit"), None, Action::Quit)],
+            ),
         ),
         Tree::with_children(
             root(fl!("edit")),
             items(
                 key_binds,
                 vec![
-                    Item::Button(fl!("change-city"), Action::ChangeCity),
-                    Item::Button(fl!("api-key"), Action::ChangeApiKey),
+                    Item::Button(fl!("change-city"), None, Action::ChangeCity),
+                    Item::Button(fl!("api-key"), None, Action::ChangeApiKey),
                 ],
             ),
         ),
@@ -30,8 +33,8 @@ pub fn menu_bar<'a>(key_binds: &HashMap<KeyBind, Action>) -> Element<'a, Message
             items(
                 key_binds,
                 vec![
-                    Item::Button(fl!("about"), Action::About),
-                    Item::Button(fl!("settings"), Action::Settings),
+                    Item::Button(fl!("about"), None, Action::About),
+                    Item::Button(fl!("settings"), None, Action::Settings),
                 ],
             ),
         ),

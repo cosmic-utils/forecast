@@ -23,6 +23,7 @@ features = [
     "image",
     "desktop",
     "multi-window",
+    "about"
 ]
 
 [dependencies.i18n-embed]

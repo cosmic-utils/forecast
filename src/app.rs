@@ -8,7 +8,7 @@ use cosmic::widget::about::About;
 use cosmic::widget::menu::action::MenuAction;
 use cosmic::widget::menu::key_bind::KeyBind;
 use cosmic::{
-    app::{Core, Task},
+    app::{context_drawer::ContextDrawer, Core, Task},
     cosmic_config::{self, CosmicConfigEntry},
     cosmic_theme, executor,
     iced::{event, keyboard::Event as KeyEvent, window, Event, Length, Subscription},
@@ -60,6 +60,7 @@ pub enum Message {
     SaveApiKey,
     OpenWebsite(String),
     Error(AppError),
+    CloseContextPage,
 }
 
 #[derive(Clone, Debug)]
@@ -299,14 +300,25 @@ impl cosmic::Application for App {
         Some(&self.nav_model)
     }
 
-    fn context_drawer(&self) -> Option<Element<Message>> {
+    fn context_drawer(&self) -> Option<ContextDrawer<Self::Message>> {
         if !self.core.window.show_context {
             return None;
         }
 
+        let title = self.context_page.title();
+
         Some(match self.context_page {
-            ContextPage::About => widget::about(&self.about, Message::OpenWebsite),
-            ContextPage::Settings => self.settings(),
+            ContextPage::About => cosmic::app::context_drawer::about(
+                &self.about,
+                Message::OpenWebsite,
+                Message::CloseContextPage,
+            )
+            .title(title),
+            ContextPage::Settings => cosmic::app::context_drawer::context_drawer(
+                self.settings(),
+                Message::CloseContextPage,
+            )
+            .title(title),
         })
     }
 
@@ -491,7 +503,6 @@ impl cosmic::Application for App {
                     self.context_page = context_page.clone();
                     self.core.window.show_context = true;
                 }
-                self.set_context_title(context_page.clone().title());
             }
             Message::Key(modifiers, key) => {
                 for (key_bind, action) in self.key_binds.iter() {
@@ -598,6 +609,7 @@ impl cosmic::Application for App {
                 commands.push(self.save_theme());
                 commands.push(self.save_config());
             }
+            Message::CloseContextPage => (),
         }
 
         Task::batch(commands)
