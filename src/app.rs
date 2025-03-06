@@ -609,7 +609,9 @@ impl cosmic::Application for App {
                 commands.push(self.save_theme());
                 commands.push(self.save_config());
             }
-            Message::CloseContextPage => (),
+            Message::CloseContextPage => {
+                self.core.window.show_context = !self.core.window.show_context;
+            }
         }
 
         Task::batch(commands)
