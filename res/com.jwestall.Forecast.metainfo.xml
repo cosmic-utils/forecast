@@ -49,6 +49,15 @@
     <binary>cosmic-ext-forecast</binary>
   </provides>
   <releases>
+    <release version="1.1.1" date="2025-03-09">
+        <description>
+            <p>Bug fixes and updates</p>
+            <ul>
+                <li>Updated libcosmic to latest version</li>
+                <li>Fixed miscellaneous bugs</li>
+            </ul>
+        </description>
+    </release>
     <release version="1.1.0" date="2024-10-15">
         <description>
             <p>Options update</p>
