@@ -49,6 +49,14 @@
     <binary>cosmic-ext-forecast</binary>
   </provides>
   <releases>
+    <release version="1.1.2" date="2025-04-12">
+        <description>
+            <p>Add translations</p>
+            <ul>
+                <li>Add Romanian translation</li>
+            </ul>
+        </description>
+    </release>
     <release version="1.1.1" date="2025-03-09">
         <description>
             <p>Bug fixes and updates</p>
