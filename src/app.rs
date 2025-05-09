@@ -206,6 +206,7 @@ impl cosmic::Application for App {
             "bar".to_string(),
             "kPa".to_string(),
             "psi".to_string(),
+            "mmHg".to_string(),
         ];
         let app_speed_units = vec!["m/s".to_string(), "mph".to_string(), "km/h".to_string()];
         let app_themes = vec![fl!("light"), fl!("dark"), fl!("system")];
@@ -716,6 +717,7 @@ where
             PressureUnits::Bar => 1,
             PressureUnits::Kilopascal => 2,
             PressureUnits::Psi => 3,
+            PressureUnits::MmHg => 4,
         };
 
         let selected_speed_units = match self.config.speed_units {
@@ -786,6 +788,7 @@ where
                                     1 => PressureUnits::Bar,
                                     2 => PressureUnits::Kilopascal,
                                     3 => PressureUnits::Psi,
+                                    4 => PressureUnits::MmHg,
                                     _ => PressureUnits::Hectopascal,
                                 })
                             },
