@@ -1,5 +1,6 @@
 [Desktop Entry]
 Name=Forecast
+Name[pt]=Meteorologia
 Exec=cosmic-ext-forecast %F
 Terminal=false
 Type=Application
@@ -7,4 +8,5 @@ StartupNotify=true
 Icon=com.jwestall.Forecast
 Categories=Utility;
 Keywords=Folder;Manager;
+Keywords[pt]=previsão;tempo;temperatura;
 MimeType=
