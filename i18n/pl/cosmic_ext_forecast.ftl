@@ -15,7 +15,7 @@ twenty-four-hr  = 24-godzinny
 about = O Prognozie
 repository = Repozytorium
 support = Wspomóż
-website = Strona Internetowa
+website = Strona domowa
 
 ## Settings
 settings = Ustawienia
