@@ -17,9 +17,12 @@
   <url type="contribute">https://github.com/cosmic-utils/forecast</url>
   <content_rating type="oars-1.1" />
   <name>Forecast</name>
+  <name xml:lang="hu">Előrejelzés</name>
   <summary>View weather predictions</summary>
+  <summary xml:lang="hu">Időjárás-előrejelzések megtekintése</summary>
   <description>
     <p>Find out what the weather is going to be like with this simple weather application for the COSMIC™ Desktop.</p>
+    <p xml:lang="hu">Tudd meg, milyen idő várható ezzel az egyszerű időjárás-alkalmazással a COSMIC™ asztali környezethez.</p>
   </description>
   <launchable type="desktop-id">com.jwestall.Forecast.desktop</launchable>
   <icon type="remote" height="256" width="256">https://raw.githubusercontent.com/cosmic-utils/forecast/main/res/icons/hicolor/scalable/apps/com.jwestall.Forecast.svg</icon>
@@ -27,6 +30,7 @@
     <screenshot type="default">
       <image>https://raw.githubusercontent.com/cosmic-utils/forecast/main/screenshots/window.png</image>
       <caption>Dark mode</caption>
+      <caption xml:lang="hu">Sötét mód</caption>
     </screenshot>
   </screenshots>
   <branding>
