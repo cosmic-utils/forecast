@@ -9,7 +9,7 @@ open = "5.1.2"
 serde = "1.0.197"
 bytes = "1.7.1"
 include_dir = "0.7.4"
-i18n-embed-fl = "0.9.1"
+i18n-embed-fl = "0.10.0"
 rust-embed = "8"
 
 [dependencies.libcosmic]
@@ -20,14 +20,13 @@ features = [
     "winit",
     "wgpu",
     "tokio",
-    "image",
     "desktop",
-    "multi-window",
-    "about"
+    "about",
+    "wayland"
 ]
 
 [dependencies.i18n-embed]
-version = "0.15.0"
+version = "0.16.0"
 features = ["fluent-system", "desktop-requester"]
 
 [dependencies.reqwest]
