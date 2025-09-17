@@ -22,7 +22,9 @@ features = [
     "tokio",
     "desktop",
     "about",
-    "wayland"
+    "wayland",
+    "multi-window",
+    "surface-message",
 ]
 
 [dependencies.i18n-embed]

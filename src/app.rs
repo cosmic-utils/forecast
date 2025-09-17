@@ -4,6 +4,7 @@ use config::{
 use cosmic::cosmic_config::Update;
 use cosmic::cosmic_theme::ThemeMode;
 use cosmic::iced::keyboard::{Key, Modifiers};
+use cosmic::surface;
 use cosmic::widget::about::About;
 use cosmic::widget::menu::action::MenuAction;
 use cosmic::widget::menu::key_bind::KeyBind;
@@ -16,7 +17,6 @@ use cosmic::{
     widget::{column, container, nav_bar, scrollable},
     ApplicationExt, Apply, Element,
 };
-use cosmic::surface;
 use serde::{Deserialize, Serialize};
 use std::any::TypeId;
 use std::collections::{HashMap, VecDeque};
@@ -264,9 +264,9 @@ impl cosmic::Application for App {
                 |data| match data {
                     Ok(data) => {
                         let Some(data) = data.first() else {
-                            return cosmic::action::Action::App(Message::Error(AppError::Location(
-                                "Could not get location data.".to_string(),
-                            )));
+                            return cosmic::action::Action::App(Message::Error(
+                                AppError::Location("Could not get location data.".to_string()),
+                            ));
                         };
                         cosmic::action::Action::App(Message::SetLocation(data.clone()))
                     }
@@ -293,7 +293,10 @@ impl cosmic::Application for App {
         app.set_header_title(window_title.clone());
 
         if let Some(_id) = app.core.main_window_id() {
-            commands.push(app.set_window_title(window_title));
+            commands.push(app.set_window_title(
+                window_title,
+                app.core().main_window_id().unwrap_or(window::Id::RESERVED),
+            ));
         }
 
         (app, Task::batch(commands))
@@ -339,10 +342,9 @@ impl cosmic::Application for App {
                     widget::text_input(fl!("search"), city.as_str())
                         .id(self.dialog_page_text.clone())
                         .on_input(move |city| Message::DialogUpdate(DialogPage::Change(city)))
-                        .on_submit(|_| Message::DialogComplete((
-                            city.to_string(),
-                            self.api_key.clone(),
-                        ))),
+                        .on_submit(|_| {
+                            Message::DialogComplete((city.to_string(), self.api_key.clone()))
+                        }),
                 );
 
                 if !self.app_locations.is_empty() {
@@ -552,9 +554,9 @@ impl cosmic::Application for App {
                 let command =
                     Task::perform(Location::get_location_data(city, key), |data| match data {
                         Ok(data) => cosmic::action::Action::App(Message::UpdateLocations(data)),
-                        Err(err) => cosmic::action::Action::App(Message::Error(AppError::Location(
-                            err.to_string(),
-                        ))),
+                        Err(err) => cosmic::action::Action::App(Message::Error(
+                            AppError::Location(err.to_string()),
+                        )),
                     });
 
                 commands.push(command);
