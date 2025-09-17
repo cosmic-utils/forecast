@@ -1,46 +1,51 @@
 use cosmic::widget::menu::key_bind::KeyBind;
-use cosmic::widget::menu::{items, root, Item};
+use cosmic::widget::menu::Item;
 use cosmic::{
-    widget::menu::{ItemHeight, ItemWidth, MenuBar, Tree},
+    app::Core,
+    widget::{
+        menu::{ItemHeight, ItemWidth},
+        responsive_menu_bar,
+    },
     Element,
 };
-use std::collections::HashMap;
+use std::{collections::HashMap, sync::LazyLock};
 
 use crate::app::{Action, Message};
 use crate::fl;
 
-pub fn menu_bar<'a>(key_binds: &HashMap<KeyBind, Action>) -> Element<'a, Message> {
-    MenuBar::new(vec![
-        Tree::with_children(
-            root(fl!("file")),
-            items(
-                key_binds,
-                vec![Item::Button(fl!("quit"), None, Action::Quit)],
-            ),
-        ),
-        Tree::with_children(
-            root(fl!("edit")),
-            items(
-                key_binds,
-                vec![
-                    Item::Button(fl!("change-city"), None, Action::ChangeCity),
-                    Item::Button(fl!("api-key"), None, Action::ChangeApiKey),
-                ],
-            ),
-        ),
-        Tree::with_children(
-            root(fl!("view")),
-            items(
-                key_binds,
-                vec![
-                    Item::Button(fl!("about"), None, Action::About),
-                    Item::Button(fl!("settings"), None, Action::Settings),
-                ],
-            ),
-        ),
-    ])
-    .item_height(ItemHeight::Dynamic(40))
-    .item_width(ItemWidth::Uniform(240))
-    .spacing(4.0)
-    .into()
+static MENU_ID: LazyLock<cosmic::widget::Id> = LazyLock::new(|| cosmic::widget::Id::new("responsive-menu"));
+
+pub fn menu_bar<'a>(core: &Core, key_binds: &HashMap<KeyBind, Action>) -> Element<'a, Message> {
+    responsive_menu_bar()
+        .item_height(ItemHeight::Dynamic(40))
+        .item_width(ItemWidth::Uniform(240))
+        .spacing(4.0)
+        .into_element(
+            core, 
+            key_binds, 
+            MENU_ID.clone(), 
+            Message::Surface, 
+            vec![
+                (
+                    fl!("file"),
+                    vec![
+                        Item::Button(fl!("quit"), None, Action::Quit)
+                    ]
+                ),
+                (
+                    fl!("edit"),
+                    vec![
+                        Item::Button(fl!("change-city"), None, Action::ChangeCity),
+                        Item::Button(fl!("api-key"), None, Action::ChangeApiKey),
+                    ]
+                ),
+                (
+                    fl!("view"),
+                    vec![
+                        Item::Button(fl!("about"), None, Action::About),
+                        Item::Button(fl!("settings"), None, Action::Settings),
+                    ]
+                )
+            ],
+        )
 }

@@ -4,6 +4,7 @@ use config::{
 use cosmic::cosmic_config::Update;
 use cosmic::cosmic_theme::ThemeMode;
 use cosmic::iced::keyboard::{Key, Modifiers};
+use cosmic::surface;
 use cosmic::widget::about::About;
 use cosmic::widget::menu::action::MenuAction;
 use cosmic::widget::menu::key_bind::KeyBind;
@@ -61,6 +62,7 @@ pub enum Message {
     OpenWebsite(String),
     Error(AppError),
     CloseContextPage,
+    Surface(surface::Action),
 }
 
 #[derive(Clone, Debug)]
@@ -218,7 +220,7 @@ impl cosmic::Application for App {
 
         let about = About::default()
             .name(fl!("cosmic-ext-forecast"))
-            .icon(Self::APP_ID)
+            .icon(cosmic::widget::icon::from_name(Self::APP_ID))
             .version("1.1.0")
             .author("Jacob Westall")
             .license("GPL-3.0")
@@ -262,13 +264,13 @@ impl cosmic::Application for App {
                 |data| match data {
                     Ok(data) => {
                         let Some(data) = data.first() else {
-                            return cosmic::app::Message::App(Message::Error(AppError::Location(
-                                "Could not get location data.".to_string(),
-                            )));
+                            return cosmic::action::Action::App(Message::Error(
+                                AppError::Location("Could not get location data.".to_string()),
+                            ));
                         };
-                        cosmic::app::Message::App(Message::SetLocation(data.clone()))
+                        cosmic::action::Action::App(Message::SetLocation(data.clone()))
                     }
-                    Err(err) => cosmic::app::Message::App(Message::Error(AppError::Location(
+                    Err(err) => cosmic::action::Action::App(Message::Error(AppError::Location(
                         err.to_string(),
                     ))),
                 },
@@ -290,8 +292,11 @@ impl cosmic::Application for App {
 
         app.set_header_title(window_title.clone());
 
-        if let Some(id) = app.core.main_window_id() {
-            commands.push(app.set_window_title(window_title, id));
+        if let Some(_id) = app.core.main_window_id() {
+            commands.push(app.set_window_title(
+                window_title,
+                app.core().main_window_id().unwrap_or(window::Id::RESERVED),
+            ));
         }
 
         (app, Task::batch(commands))
@@ -337,10 +342,9 @@ impl cosmic::Application for App {
                     widget::text_input(fl!("search"), city.as_str())
                         .id(self.dialog_page_text.clone())
                         .on_input(move |city| Message::DialogUpdate(DialogPage::Change(city)))
-                        .on_submit(Message::DialogComplete((
-                            city.to_string(),
-                            self.api_key.clone(),
-                        ))),
+                        .on_submit(|_| {
+                            Message::DialogComplete((city.to_string(), self.api_key.clone()))
+                        }),
                 );
 
                 if !self.app_locations.is_empty() {
@@ -376,7 +380,7 @@ impl cosmic::Application for App {
                     .push(
                         widget::text_input(fl!("api-key"), self.api_key.as_str())
                             .on_input(Message::ApiKeyUpdate)
-                            .on_submit(Message::SaveApiKey),
+                            .on_submit(|_| Message::SaveApiKey),
                     )
                     .push(widget::text::body(fl!("provide-api-key")))
                     .push(widget::button::standard(fl!("create-account")).on_press(
@@ -421,7 +425,7 @@ impl cosmic::Application for App {
     }
 
     fn header_start(&self) -> Vec<Element<Self::Message>> {
-        vec![menu::menu_bar(&self.key_binds)]
+        vec![menu::menu_bar(&self.core, &self.key_binds)]
     }
 
     fn on_nav_select(&mut self, id: nav_bar::Id) -> Task<Message> {
@@ -549,10 +553,10 @@ impl cosmic::Application for App {
             Message::DialogComplete((city, key)) => {
                 let command =
                     Task::perform(Location::get_location_data(city, key), |data| match data {
-                        Ok(data) => cosmic::app::Message::App(Message::UpdateLocations(data)),
-                        Err(err) => cosmic::app::Message::App(Message::Error(AppError::Location(
-                            err.to_string(),
-                        ))),
+                        Ok(data) => cosmic::action::Action::App(Message::UpdateLocations(data)),
+                        Err(err) => cosmic::action::Action::App(Message::Error(
+                            AppError::Location(err.to_string()),
+                        )),
                     });
 
                 commands.push(command);
@@ -613,6 +617,11 @@ impl cosmic::Application for App {
             Message::CloseContextPage => {
                 self.core.window.show_context = !self.core.window.show_context;
             }
+            Message::Surface(a) => {
+                return cosmic::task::message(cosmic::Action::Cosmic(
+                    cosmic::app::Action::Surface(a),
+                ));
+            }
         }
 
         Task::batch(commands)
@@ -665,7 +674,7 @@ where
     }
 
     fn save_theme(&self) -> Task<Message> {
-        cosmic::app::command::set_theme(self.config.app_theme.theme())
+        cosmic::command::set_theme(self.config.app_theme.theme())
     }
 
     fn update_weather_data(&self) -> Task<Message> {
@@ -688,14 +697,14 @@ where
             |data| match data {
                 Ok(data) => {
                     let Some(data) = data else {
-                        return cosmic::app::Message::App(Message::Error(AppError::Weather(
+                        return cosmic::action::Action::App(Message::Error(AppError::Weather(
                             "Could not get weather data.".to_string(),
                         )));
                     };
-                    cosmic::app::Message::App(Message::SetWeatherData(data.clone()))
+                    cosmic::action::Action::App(Message::SetWeatherData(data.clone()))
                 }
                 Err(err) => {
-                    cosmic::app::Message::App(Message::Error(AppError::Weather(err.to_string())))
+                    cosmic::action::Action::App(Message::Error(AppError::Weather(err.to_string())))
                 }
             },
         )
