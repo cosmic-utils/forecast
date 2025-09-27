@@ -53,6 +53,15 @@
     <binary>cosmic-ext-forecast</binary>
   </provides>
   <releases>
+    <release version="1.2.0" date="2025-09-27">
+        <description>
+            <p>Responsive Menu Update</p>
+            <ul>
+                <li>Add various translations</li>
+                <li>Fix menu bar for low width screens</li>
+            </ul>
+        </description>
+    </release>
     <release version="1.1.4" date="2025-05-09">
         <description>
             <p>Add translations</p>
