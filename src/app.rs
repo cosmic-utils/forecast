@@ -256,11 +256,21 @@ impl cosmic::Application for App {
             config_state_handler: flags.config_state_handler,
         };
 
-        // Default location to Denver if empty
-        // TODO: Default to user location
+        // Default location to user location if empty
+        // Denver if not found
         if app.config.location.is_none() {
+            let user_city = match public_ip_address::perform_lookup(None) {
+                Ok(result) => {
+                    match result.city {
+                        Some(city) => city,
+                        None => "Denver".to_string()
+                    }
+                }
+                Err(_) => "Denver".to_string()
+            };
+
             let command = Task::perform(
-                Location::get_location_data(String::from("Denver"), app.api_key.clone()),
+                Location::get_location_data(user_city, app.api_key.clone()),
                 |data| match data {
                     Ok(data) => {
                         let Some(data) = data.first() else {
