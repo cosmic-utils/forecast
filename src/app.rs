@@ -38,6 +38,7 @@ use crate::model::weather::{WeatherData, WeatherRequestStatus};
 #[derive(Clone, Debug)]
 pub enum Message {
     ChangeCity,
+    DefaultCity,
     ChangeApiKey,
     Quit,
     SystemThemeModeChange,
@@ -259,31 +260,8 @@ impl cosmic::Application for App {
         // Default location to user location if empty
         // Denver if not found
         if app.config.location.is_none() {
-            let user_city = match public_ip_address::perform_lookup(None) {
-                Ok(result) => {
-                    match result.city {
-                        Some(city) => city,
-                        None => "Denver".to_string()
-                    }
-                }
-                Err(_) => "Denver".to_string()
-            };
-
-            let command = Task::perform(
-                Location::get_location_data(user_city, app.api_key.clone()),
-                |data| match data {
-                    Ok(data) => {
-                        let Some(data) = data.first() else {
-                            return cosmic::action::Action::App(Message::Error(
-                                AppError::Location("Could not get location data.".to_string()),
-                            ));
-                        };
-                        cosmic::action::Action::App(Message::SetLocation(data.clone()))
-                    }
-                    Err(err) => cosmic::action::Action::App(Message::Error(AppError::Location(
-                        err.to_string(),
-                    ))),
-                },
+            let command = Task::done(
+                cosmic::action::Action::App(Message::DefaultCity)
             );
 
             commands.push(command);
@@ -381,6 +359,9 @@ impl cosmic::Application for App {
                     ))
                     .secondary_action(
                         widget::button::standard(fl!("cancel")).on_press(Message::DialogCancel),
+                    )
+                    .tertiary_action(
+                        widget::button::text(fl!("use-default-location")).on_press(Message::DefaultCity),
                     )
                     .control(content)
             }
@@ -501,6 +482,36 @@ impl cosmic::Application for App {
                 // TODO
                 self.dialog_pages
                     .push_back(DialogPage::Change(String::new()));
+            }
+            Message::DefaultCity => {
+                let user_city = match public_ip_address::perform_lookup(None) {
+                    Ok(result) => {
+                        match result.city {
+                            Some(city) => city,
+                            None => "Denver".to_string()
+                        }
+                    }
+                    Err(_) => "Denver".to_string()
+                };
+    
+                let command = Task::perform(
+                    Location::get_location_data(user_city, self.api_key.clone()),
+                    |data| match data {
+                        Ok(data) => {
+                            let Some(data) = data.first() else {
+                                return cosmic::action::Action::App(Message::Error(
+                                    AppError::Location("Could not get location data.".to_string()),
+                                ));
+                            };
+                            cosmic::action::Action::App(Message::SetLocation(data.clone()))
+                        }
+                        Err(err) => cosmic::action::Action::App(Message::Error(AppError::Location(
+                            err.to_string(),
+                        ))),
+                    },
+                );
+    
+                commands.push(command);
             }
             Message::ChangeApiKey => {
                 // TODO
