@@ -1,5 +1,6 @@
 [Desktop Entry]
 Name=Forecast
+Name[cs]=Předpověď
 Name[pt]=Meteorologia
 Exec=cosmic-ext-forecast %F
 Terminal=false
@@ -8,6 +9,7 @@ StartupNotify=true
 Icon=com.jwestall.Forecast
 Categories=Utility;
 Keywords=Temperature;Weather;
+Keywords[cs]=Weather;počasí;teploty;
 Keywords[pt]=previsão;tempo;temperatura;
 Keywords[hu]=Hőmérséklet;Időjárás;
 MimeType=
