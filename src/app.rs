@@ -841,21 +841,30 @@ where
         content = content.push(
             widget::settings::section()
                 .add(
-                    widget::button::text(fl!("current-location"))
-                        .on_press(Message::DefaultCity)
-                        .class(theme::Button::Link)
+                    widget::settings::item_row(vec![
+                        widget::text::body(fl!("current-location"))
+                            .into()
+                    ])
+                    .apply(widget::container)
+                    .class(cosmic::theme::Container::List)
+                    .apply(widget::button::custom)
+                    .class(cosmic::theme::Button::Transparent)
+                    .on_press(Message::DefaultCity)
                 )
         );
 
         if !self.app_locations.is_empty() {
             let results: Vec<Element<Message>> = self.app_locations.iter()
                 .map(|result| {
-                    widget::button::text(&result.display_name)
-                        .width(Length::Fill)
-                        .height(Length::Shrink)
-                        .on_press(Message::SetLocation(result.clone()))
-                        .class(theme::Button::Link)
-                        .into()
+                    widget::settings::item_row(vec![
+                        widget::text::body(&result.display_name).into()
+                    ])
+                    .apply(widget::container)
+                    .class(cosmic::theme::Container::List)
+                    .apply(widget::button::custom)
+                    .class(cosmic::theme::Button::Transparent)
+                    .on_press(Message::SetLocation(result.clone()))
+                    .into()
                 })
                 .collect();
 
