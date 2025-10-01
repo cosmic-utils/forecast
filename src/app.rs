@@ -4,6 +4,7 @@ use config::{
 use cosmic::cosmic_config::Update;
 use cosmic::cosmic_theme::ThemeMode;
 use cosmic::iced::keyboard::{Key, Modifiers};
+//use cosmic::iced_core::Element;
 use cosmic::surface;
 use cosmic::widget::about::About;
 use cosmic::widget::menu::action::MenuAction;
@@ -37,7 +38,7 @@ use crate::model::weather::{WeatherData, WeatherRequestStatus};
 
 #[derive(Clone, Debug)]
 pub enum Message {
-    ChangeCity,
+    ChangeCity(String),
     DefaultCity,
     ChangeApiKey,
     Quit,
@@ -54,7 +55,6 @@ pub enum Message {
     DefaultPage(NavPage),
     DialogComplete((String, String)),
     DialogCancel,
-    DialogUpdate(DialogPage),
     UpdateLocations(Vec<Location>),
     SetLocation(Location),
     SetWeatherData((WeatherConfigState, WeatherRequestStatus)),
@@ -78,6 +78,7 @@ pub struct Flags {
 pub enum ContextPage {
     About,
     Settings,
+    ChangeCity,
 }
 
 impl ContextPage {
@@ -85,13 +86,13 @@ impl ContextPage {
         match self {
             Self::About => fl!("about"),
             Self::Settings => fl!("settings"),
+            Self::ChangeCity => fl!("change-city"),
         }
     }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub enum DialogPage {
-    Change(String),
     ApiKey,
     Info(AppError),
 }
@@ -112,7 +113,7 @@ impl MenuAction for Action {
         match self {
             Action::About => Message::ToggleContextPage(ContextPage::About),
             Action::Settings => Message::ToggleContextPage(ContextPage::Settings),
-            Action::ChangeCity => Message::ChangeCity,
+            Action::ChangeCity => Message::ToggleContextPage(ContextPage::ChangeCity),
             Action::ChangeApiKey => Message::ChangeApiKey,
             Action::Quit => Message::Quit,
         }
@@ -160,6 +161,7 @@ pub struct App {
     pub config: WeatherConfig,
     pub config_state: WeatherConfigState,
 
+    city: String,
     app_locations: Vec<Location>,
     units: Vec<String>,
     timefmt: Vec<String>,
@@ -169,7 +171,6 @@ pub struct App {
     api_key: String,
     app_themes: Vec<String>,
     dialog_pages: VecDeque<DialogPage>,
-    dialog_page_text: widget::Id,
 }
 
 impl cosmic::Application for App {
@@ -244,6 +245,7 @@ impl cosmic::Application for App {
             config_handler: flags.config_handler,
             api_key: flags.config.api_key.clone(),
             config: flags.config,
+            city: String::new(),
             app_locations: Vec::new(),
             units: app_units,
             timefmt: app_timefmt,
@@ -252,7 +254,6 @@ impl cosmic::Application for App {
             pages: app_pages,
             app_themes,
             dialog_pages: VecDeque::new(),
-            dialog_page_text: widget::Id::unique(),
             config_state: flags.config_state,
             config_state_handler: flags.config_state_handler,
         };
@@ -313,6 +314,22 @@ impl cosmic::Application for App {
                 Message::CloseContextPage,
             )
             .title(title),
+            ContextPage::ChangeCity => {
+                let city = self.city.clone();
+
+                let search = widget::text_input(fl!("search"), city)
+                    .on_input(move |city| Message::ChangeCity(city))
+                    .on_submit(|city| {
+                        Message::DialogComplete((city.to_string(), self.api_key.clone()))
+                    });
+
+                cosmic::app::context_drawer::context_drawer(
+                    self.changecity(),
+                    Message::CloseContextPage
+                )
+                .title(title)
+                .header(search)
+            }
         })
     }
 
@@ -325,46 +342,6 @@ impl cosmic::Application for App {
         let cosmic_theme::Spacing { space_xxs, .. } = theme::active().cosmic().spacing;
 
         let dialog = match dialog_page {
-            DialogPage::Change(city) => {
-                let mut content = widget::column().spacing(space_xxs).push(
-                    widget::text_input(fl!("search"), city.as_str())
-                        .id(self.dialog_page_text.clone())
-                        .on_input(move |city| Message::DialogUpdate(DialogPage::Change(city)))
-                        .on_submit(|_| {
-                            Message::DialogComplete((city.to_string(), self.api_key.clone()))
-                        }),
-                );
-
-                if !self.app_locations.is_empty() {
-                    let mut locations_btns = widget::column();
-
-                    for location in self.app_locations.iter() {
-                        locations_btns = locations_btns.push(
-                            widget::button::standard(location.as_ref())
-                                .width(Length::Fill)
-                                .on_press(Message::SetLocation(location.clone()))
-                                .class(theme::Button::Link),
-                        );
-                    }
-
-                    content = content.push(
-                        widget::container(widget::scrollable(locations_btns)).max_height(200),
-                    );
-                }
-
-                widget::dialog()
-                    .title(fl!("change-city"))
-                    .primary_action(widget::button::suggested(fl!("search")).on_press(
-                        Message::DialogComplete((city.to_string(), self.api_key.clone())),
-                    ))
-                    .secondary_action(
-                        widget::button::standard(fl!("cancel")).on_press(Message::DialogCancel),
-                    )
-                    .tertiary_action(
-                        widget::button::text(fl!("use-default-location")).on_press(Message::DefaultCity),
-                    )
-                    .control(content)
-            }
             DialogPage::ApiKey => {
                 let content = widget::column()
                     .spacing(space_xxs)
@@ -478,10 +455,8 @@ impl cosmic::Application for App {
     fn update(&mut self, message: Self::Message) -> Task<Self::Message> {
         let mut commands = vec![];
         match message {
-            Message::ChangeCity => {
-                // TODO
-                self.dialog_pages
-                    .push_back(DialogPage::Change(String::new()));
+            Message::ChangeCity(city) => {
+                self.city = city;
             }
             Message::DefaultCity => {
                 let user_city = match public_ip_address::perform_lookup(None) {
@@ -586,9 +561,6 @@ impl cosmic::Application for App {
             Message::DialogCancel => {
                 self.dialog_pages.pop_front();
             }
-            Message::DialogUpdate(dialog_page) => {
-                self.dialog_pages[0] = dialog_page;
-            }
             Message::UpdateLocations(locations) => {
                 self.app_locations = locations;
             }
@@ -599,7 +571,7 @@ impl cosmic::Application for App {
                 commands.push(self.save_config());
                 commands.push(self.update_weather_data());
 
-                self.dialog_pages.pop_front();
+                self.core.window.show_context = !self.core.window.show_context;
             }
             Message::SetWeatherData((config_state, status)) => {
                 match status {
@@ -859,5 +831,42 @@ where
                 .into(),
         ])
         .into()
+    }
+
+    fn changecity(&self) -> Element<Message> {
+        let cosmic_theme::Spacing { space_xxs, .. } = theme::active().cosmic().spacing;
+
+        let mut content = widget::column().spacing(space_xxs);
+
+        content = content.push(
+            widget::settings::section()
+                .add(
+                    widget::button::text(fl!("current-location"))
+                        .on_press(Message::DefaultCity)
+                        .class(theme::Button::Link)
+                )
+        );
+
+        if !self.app_locations.is_empty() {
+            let results: Vec<Element<Message>> = self.app_locations.iter()
+                .map(|result| {
+                    widget::button::text(&result.display_name)
+                        .width(Length::Fill)
+                        .height(Length::Shrink)
+                        .on_press(Message::SetLocation(result.clone()))
+                        .class(theme::Button::Link)
+                        .into()
+                })
+                .collect();
+
+            content = content.push(
+                widget::settings::section()
+                    .extend(
+                        results
+                    )
+            );
+        }
+
+        content.into()
     }
 }
