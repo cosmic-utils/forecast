@@ -14,7 +14,7 @@ twenty-four-hr  = 24-godzinny
 ## About
 about = O Prognozie
 repository = Repozytorium
-support = Wspomóż
+support = Wsparcie
 website = Strona domowa
 
 ## Settings
@@ -41,6 +41,7 @@ search = Wyszukaj
 api-key = Klucz API
 provide-api-key = Pewne zapytania wymagają Kluczy API. Naciśnij przycisk poniżej lub idź do https://geocode.maps.co/join/ by stworzyć darmowe konto.
 create-account = Utwórz darmowe konto
+current-location = Obecna lokalizacja
 
 # Nav Page
 hourly-forecast = Prognoza Godzinowa
