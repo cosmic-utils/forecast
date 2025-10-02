@@ -41,6 +41,7 @@ search = Vyhledat
 api-key = API klíč
 provide-api-key = Některé požadavky vyžadují API klíč. Stiskněte tlačítko dole nebo přejděte na https://geocode.maps.co/join/ pro vytvoření účtu zdarma.
 create-account = Vytvořit účet zdarma
+current-location = Aktuální poloha
 
 # Nav Page
 hourly-forecast = Hodinová předpověď
@@ -61,7 +62,7 @@ view = Zobrazení
 
 # Views
 no_weather_data = Žádná data o počasí
-unknown_location = Neznámá oblast
+unknown_location = Neznámá poloha
 last_updated = Naposledy aktualizováno
 data_from_metno = Data o počasí pochází z Norského meteorologického institutu
 
