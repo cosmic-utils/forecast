@@ -13,7 +13,7 @@ impl App
 where
     Self: cosmic::Application,
 {
-    pub fn view_detail_forecast(&self) -> Element<Message> {
+    pub fn view_detail_forecast(&self) -> Element<'_, Message> {
         let current_time = Local::now();
         let location = self.config.location.clone();
         let spacing = cosmic::theme::active().cosmic().spacing;

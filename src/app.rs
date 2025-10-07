@@ -295,7 +295,7 @@ impl cosmic::Application for App {
         Some(&self.nav_model)
     }
 
-    fn context_drawer(&self) -> Option<ContextDrawer<Self::Message>> {
+    fn context_drawer(&self) -> Option<ContextDrawer<'_, Self::Message>> {
         if !self.core.window.show_context {
             return None;
         }
@@ -333,7 +333,7 @@ impl cosmic::Application for App {
         })
     }
 
-    fn dialog(&self) -> Option<Element<Message>> {
+    fn dialog(&self) -> Option<Element<'_, Message>> {
         let dialog_page = match self.dialog_pages.front() {
             Some(some) => some,
             None => return None,
@@ -392,7 +392,7 @@ impl cosmic::Application for App {
         Some(dialog.into())
     }
 
-    fn header_start(&self) -> Vec<Element<Self::Message>> {
+    fn header_start(&self) -> Vec<Element<'_, Self::Message>> {
         vec![menu::menu_bar(&self.core, &self.key_binds)]
     }
 
@@ -620,7 +620,7 @@ impl cosmic::Application for App {
         Task::batch(commands)
     }
 
-    fn view(&self) -> Element<Self::Message> {
+    fn view(&self) -> Element<'_, Self::Message> {
         let page_view = match self.nav_model.active_data::<NavPage>() {
             Some(NavPage::HourlyView) => self.view_hourly_forecast(),
             Some(NavPage::DailyView) => self.view_daily_forecast(),
@@ -703,7 +703,7 @@ where
         )
     }
 
-    fn settings(&self) -> Element<Message> {
+    fn settings(&self) -> Element<'_, Message> {
         let selected_units = match self.config.units {
             Units::Fahrenheit => 0,
             Units::Celsius => 1,
@@ -833,7 +833,7 @@ where
         .into()
     }
 
-    fn changecity(&self) -> Element<Message> {
+    fn changecity(&self) -> Element<'_, Message> {
         let cosmic_theme::Spacing { space_xxs, .. } = theme::active().cosmic().spacing;
 
         let mut content = widget::column().spacing(space_xxs);
