@@ -223,7 +223,7 @@ impl cosmic::Application for App {
         let about = About::default()
             .name(fl!("cosmic-ext-forecast"))
             .icon(cosmic::widget::icon::from_name(Self::APP_ID))
-            .version("1.1.0")
+            .version(env!("CARGO_PKG_VERSION"))
             .author("Jacob Westall")
             .license("GPL-3.0")
             .links([
