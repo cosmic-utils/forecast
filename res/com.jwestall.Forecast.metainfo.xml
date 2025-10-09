@@ -57,6 +57,15 @@
     <binary>cosmic-ext-forecast</binary>
   </provides>
   <releases>
+    <release version="1.3.0" date="2025-10-08">
+        <description>
+            <p>Location Detection Update</p>
+            <ul>
+                <li>Add ability to determine user location automatically</li>
+                <li>Move change city dialog to context drawer</li>
+            </ul>
+        </description>
+    </release>
     <release version="1.2.0" date="2025-09-27">
         <description>
             <p>Responsive Menu Update</p>
