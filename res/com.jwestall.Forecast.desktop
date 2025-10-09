@@ -1,6 +1,7 @@
 [Desktop Entry]
 Name=Forecast
 Name[cs]=Předpověď
+Name[pl]=Prognoza
 Name[pt]=Meteorologia
 Exec=cosmic-ext-forecast %F
 Terminal=false
@@ -10,6 +11,7 @@ Icon=com.jwestall.Forecast
 Categories=Utility;
 Keywords=Temperature;Weather;
 Keywords[cs]=Weather;počasí;teploty;
+Keywords[pl]=Weather;Temperatura;Prognoza;
 Keywords[pt]=previsão;tempo;temperatura;
 Keywords[hu]=Hőmérséklet;Időjárás;
 MimeType=
