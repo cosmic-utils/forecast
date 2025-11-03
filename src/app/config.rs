@@ -29,6 +29,7 @@ pub enum PressureUnits {
     Kilopascal,
     Psi,
     MmHg,
+    Atmosphere,
 }
 
 #[derive(Clone, CosmicConfigEntry, Debug, Deserialize, Serialize, Default)]

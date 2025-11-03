@@ -211,6 +211,7 @@ impl cosmic::Application for App {
             "kPa".to_string(),
             "psi".to_string(),
             "mmHg".to_string(),
+            "atm".to_string(),
         ];
         let app_speed_units = vec!["m/s".to_string(), "mph".to_string(), "km/h".to_string()];
         let app_themes = vec![fl!("light"), fl!("dark"), fl!("system")];
@@ -261,9 +262,7 @@ impl cosmic::Application for App {
         // Default location to user location if empty
         // Denver if not found
         if app.config.location.is_none() {
-            let command = Task::done(
-                cosmic::action::Action::App(Message::DefaultCity)
-            );
+            let command = Task::done(cosmic::action::Action::App(Message::DefaultCity));
 
             commands.push(command);
         }
@@ -325,7 +324,7 @@ impl cosmic::Application for App {
 
                 cosmic::app::context_drawer::context_drawer(
                     self.changecity(),
-                    Message::CloseContextPage
+                    Message::CloseContextPage,
                 )
                 .title(title)
                 .header(search)
@@ -460,15 +459,13 @@ impl cosmic::Application for App {
             }
             Message::DefaultCity => {
                 let user_city = match public_ip_address::perform_lookup(None) {
-                    Ok(result) => {
-                        match result.city {
-                            Some(city) => city,
-                            None => "Denver".to_string()
-                        }
-                    }
-                    Err(_) => "Denver".to_string()
+                    Ok(result) => match result.city {
+                        Some(city) => city,
+                        None => "Denver".to_string(),
+                    },
+                    Err(_) => "Denver".to_string(),
                 };
-    
+
                 let command = Task::perform(
                     Location::get_location_data(user_city, self.api_key.clone()),
                     |data| match data {
@@ -480,12 +477,12 @@ impl cosmic::Application for App {
                             };
                             cosmic::action::Action::App(Message::SetLocation(data.clone()))
                         }
-                        Err(err) => cosmic::action::Action::App(Message::Error(AppError::Location(
-                            err.to_string(),
-                        ))),
+                        Err(err) => cosmic::action::Action::App(Message::Error(
+                            AppError::Location(err.to_string()),
+                        )),
                     },
                 );
-    
+
                 commands.push(command);
             }
             Message::ChangeApiKey => {
@@ -720,6 +717,7 @@ where
             PressureUnits::Kilopascal => 2,
             PressureUnits::Psi => 3,
             PressureUnits::MmHg => 4,
+            PressureUnits::Atmosphere => 5,
         };
 
         let selected_speed_units = match self.config.speed_units {
@@ -791,6 +789,7 @@ where
                                     2 => PressureUnits::Kilopascal,
                                     3 => PressureUnits::Psi,
                                     4 => PressureUnits::MmHg,
+                                    5 => PressureUnits::Atmosphere,
                                     _ => PressureUnits::Hectopascal,
                                 })
                             },
@@ -839,26 +838,26 @@ where
         let mut content = widget::column().spacing(space_xxs);
 
         content = content.push(
-            widget::settings::section()
-                .add(
-                    widget::settings::item_row(vec![
-                        widget::text::body(fl!("current-location"))
-                            .into()
-                    ])
-                    .apply(widget::container)
-                    .class(cosmic::theme::Container::List)
-                    .apply(widget::button::custom)
-                    .class(cosmic::theme::Button::Transparent)
-                    .on_press(Message::DefaultCity)
+            widget::settings::section().add(
+                widget::settings::item_row(
+                    vec![widget::text::body(fl!("current-location")).into()],
                 )
+                .apply(widget::container)
+                .class(cosmic::theme::Container::List)
+                .apply(widget::button::custom)
+                .class(cosmic::theme::Button::Transparent)
+                .on_press(Message::DefaultCity),
+            ),
         );
 
         if !self.app_locations.is_empty() {
-            let results: Vec<Element<Message>> = self.app_locations.iter()
+            let results: Vec<Element<Message>> = self
+                .app_locations
+                .iter()
                 .map(|result| {
-                    widget::settings::item_row(vec![
-                        widget::text::body(&result.display_name).into()
-                    ])
+                    widget::settings::item_row(
+                        vec![widget::text::body(&result.display_name).into()],
+                    )
                     .apply(widget::container)
                     .class(cosmic::theme::Container::List)
                     .apply(widget::button::custom)
@@ -868,12 +867,7 @@ where
                 })
                 .collect();
 
-            content = content.push(
-                widget::settings::section()
-                    .extend(
-                        results
-                    )
-            );
+            content = content.push(widget::settings::section().extend(results));
         }
 
         content.into()

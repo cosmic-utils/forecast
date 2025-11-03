@@ -49,6 +49,7 @@ where
             PressureUnits::Kilopascal => "kPa".to_string(),
             PressureUnits::Psi => "psi".to_string(),
             PressureUnits::MmHg => "mmHg".to_string(),
+            PressureUnits::Atmosphere => "atm".to_string(),
         };
 
         let speed_units = match self.config.speed_units {
@@ -152,6 +153,7 @@ where
             PressureUnits::Kilopascal => value * 0.1_f64,
             PressureUnits::Psi => value * 0.0145037738_f64,
             PressureUnits::MmHg => value * 0.7500616_f64,
+            PressureUnits::Atmosphere => value * 0.0009869233_f64,
         }
     }
 
