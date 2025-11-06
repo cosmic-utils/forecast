@@ -1,4 +1,7 @@
-use cosmic::app::Settings;
+use cosmic::{
+    app::Settings,
+    iced::Limits,
+};
 
 use crate::app::config::WeatherConfig;
 use crate::app::Flags;
@@ -12,6 +15,7 @@ pub fn settings() -> Settings {
         .antialiasing(true)
         .client_decorations(true)
         .debug(false)
+        .size_limits(Limits::NONE.min_width(360.0).min_height(200.0))
 }
 
 pub fn flags() -> Flags {
