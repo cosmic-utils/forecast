@@ -21,14 +21,14 @@ website = Webová stránka
 settings = Nastavení
 general = Obecné
 appearance = Vzhled
-theme = Téma
+theme = Motiv
 units = Jednotky
 time-format = Formát času
 default-page = Výchozí stránka
 
 ## App Themes
-dark = Tmavé
-light = Světlé
+dark = Tmavý
+light = Světlý
 system = Podle systému
 
 # Dialog Page
