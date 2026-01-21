@@ -41,6 +41,7 @@ search = Keresés
 api-key = API-kulcs
 provide-api-key = Egyes kérésekhez API-kulcs szükséges. Nyomd meg az alábbi gombot, vagy menj a https://geocode.maps.co/join/ oldalra, és hozz létre egy ingyenes fiókot.
 create-account = Ingyenes fiók létrehozása
+current-location = Jelenlegi hely
 
 # Nav Page
 hourly-forecast = Óránkénti előrejelzés
