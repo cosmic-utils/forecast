@@ -372,7 +372,7 @@ impl cosmic::Application for App {
                         let title = widget::text::title4("This request require API key");
                         content = content.push(title);
                         content = content.push(widget::text::body(body));
-                        content = content.push(widget::text::body("Go to Edit > API Key to enter your API key."));
+                        content = content.push(widget::text::body(fl!("edit-api-key-page")));
                     }
                     AppError::Weather(body) => {
                         let title = widget::text::title4("Fetching Weather");

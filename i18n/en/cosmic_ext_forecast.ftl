@@ -40,6 +40,7 @@ dummy-dialog = Dummy Dialog
 search = Search
 api-key = API Key
 provide-api-key = Some requests require API Key. Press button below or go to https://geocode.maps.co/join/ to create free account.
+edit-api-key-page = Go to Edit > API Key to enter your API Key.
 create-account = Create free account
 current-location = Current location
 
