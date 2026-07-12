@@ -1,7 +1,7 @@
 use chrono::Local;
+use cosmic::iced::widget::scrollable::Direction;
+use cosmic::iced::widget::scrollable::Scrollbar;
 use cosmic::iced::Alignment;
-use cosmic::iced_widget::scrollable::Direction;
-use cosmic::iced_widget::scrollable::Scrollbar;
 use cosmic::widget;
 use cosmic::Element;
 
@@ -18,9 +18,9 @@ where
 {
     pub fn view_hourly_forecast(&self) -> Element<'_, Message> {
         let current_time = Local::now();
-        let location = self.config.location.clone();
+        let location = self.weather_config.location.clone();
         let spacing = cosmic::theme::active().cosmic().spacing;
-        let Some(weather_data) = &self.config_state.weather_data else {
+        let Some(weather_data) = &self.weather_state_config.weather_data else {
             return cosmic::widget::text(fl!("no_weather_data")).into();
         };
         let data = weather_data
@@ -31,7 +31,7 @@ where
             .map(|ts| ts.data.clone())
             .unwrap_or_default();
 
-        let last_updated = match self.config.timefmt {
+        let last_updated = match self.weather_config.timefmt {
             TimeFmt::TwelveHr => weather_data
                 .properties
                 .meta
@@ -53,7 +53,7 @@ where
                 .iter()
                 .filter(|timeseries| timeseries.time >= current_time)
                 .map(|ts| {
-                    widget::column()
+                    widget::column(vec![])
                         .align_x(Alignment::Center)
                         .padding(spacing.space_xs)
                         .spacing(spacing.space_xs)
@@ -73,18 +73,18 @@ where
                 })
                 .collect();
 
-        let column = widget::column()
+        let column = widget::column(vec![])
             .padding(spacing.space_xs)
             .spacing(spacing.space_xs)
             .push(
-                widget::row()
+                widget::row(vec![])
                     .spacing(spacing.space_m)
                     .push_maybe(data.next_1_hours.as_ref().map(|next_1_hours| {
                         let symbol = next_1_hours.summary.symbol_code.clone();
                         widget::icon(WeatherData::icon_handle(symbol)).size(150)
                     }))
                     .push(
-                        widget::column()
+                        widget::column(vec![])
                             .spacing(spacing.space_xs)
                             .push(
                                 location
@@ -118,14 +118,14 @@ where
     }
 
     pub fn set_temp_units(&self, temp: f64) -> i64 {
-        match self.config.units {
+        match self.weather_config.units {
             Units::Fahrenheit => ((temp * (9_f64 / 5_f64)) + 32_f64) as i64,
             Units::Celsius => temp as i64,
         }
     }
 
     fn format_time(&self, ts: &Timeseries) -> String {
-        match self.config.timefmt {
+        match self.weather_config.timefmt {
             TimeFmt::TwelveHr => ts.time.format("%_I:%M %p").to_string(),
             TimeFmt::TwentyFourHr => ts.time.format("%_H:%M").to_string(),
         }

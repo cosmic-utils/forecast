@@ -1,12 +1,12 @@
 use cosmic::{
     cosmic_config::{self, cosmic_config_derive::CosmicConfigEntry, Config, CosmicConfigEntry},
-    theme, Application,
+    theme,
 };
 use serde::{Deserialize, Serialize};
 
 use crate::model::weather::WeatherData;
 
-use super::{App, NavPage};
+use super::NavPage;
 
 pub const CONFIG_VERSION: u64 = 1;
 
@@ -32,8 +32,9 @@ pub enum PressureUnits {
     Atmosphere,
 }
 
-#[derive(Clone, CosmicConfigEntry, Debug, Deserialize, Serialize, Default)]
-pub struct WeatherConfigState {
+#[derive(Clone, CosmicConfigEntry, Debug, Deserialize, Serialize, Default, PartialEq)]
+#[version = 1]
+pub struct WeatherStateConfig {
     /// `Expires` response header of met.no request.
     ///
     /// No new request should be sent before this date.
@@ -50,22 +51,13 @@ pub struct WeatherConfigState {
     pub weather_data: Option<WeatherData>,
 }
 
-impl WeatherConfigState {
-    pub fn config_handler() -> Option<Config> {
-        Config::new_state(App::APP_ID, CONFIG_VERSION).ok()
-    }
+impl WeatherStateConfig {
+    pub fn config(handler: &Config) -> WeatherStateConfig {
+        WeatherStateConfig::get_entry(handler).unwrap_or_else(|(errs, config)| {
+            tracing::info!("errors loading config: {:?}", errs);
 
-    pub fn config() -> Self {
-        match Self::config_handler() {
-            Some(config_handler) => {
-                Self::get_entry(&config_handler).unwrap_or_else(|(errs, config)| {
-                    log::info!("errors loading config state: {:?}", errs);
-
-                    config
-                })
-            }
-            None => Self::default(),
-        }
+            config
+        })
     }
 }
 
@@ -77,6 +69,7 @@ pub enum SpeedUnits {
 }
 
 #[derive(Clone, CosmicConfigEntry, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[version = 1]
 pub struct WeatherConfig {
     pub location: Option<String>,
     pub latitude: Option<String>,
@@ -108,21 +101,12 @@ impl Default for WeatherConfig {
 }
 
 impl WeatherConfig {
-    pub fn config_handler() -> Option<Config> {
-        Config::new(App::APP_ID, CONFIG_VERSION).ok()
-    }
+    pub fn config(handler: &Config) -> WeatherConfig {
+        WeatherConfig::get_entry(handler).unwrap_or_else(|(errs, config)| {
+            tracing::info!("errors loading config: {:?}", errs);
 
-    pub fn config() -> WeatherConfig {
-        match Self::config_handler() {
-            Some(config_handler) => {
-                WeatherConfig::get_entry(&config_handler).unwrap_or_else(|(errs, config)| {
-                    log::info!("errors loading config: {:?}", errs);
-
-                    config
-                })
-            }
-            None => WeatherConfig::default(),
-        }
+            config
+        })
     }
 }
 

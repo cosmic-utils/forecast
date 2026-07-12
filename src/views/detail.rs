@@ -15,9 +15,9 @@ where
 {
     pub fn view_detail_forecast(&self) -> Element<'_, Message> {
         let current_time = Local::now();
-        let location = self.config.location.clone();
+        let location = self.weather_config.location.clone();
         let spacing = cosmic::theme::active().cosmic().spacing;
-        let Some(weather_data) = &self.config_state.weather_data else {
+        let Some(weather_data) = &self.weather_state_config.weather_data else {
             return cosmic::widget::text(fl!("no_weather_data")).into();
         };
         let data = weather_data
@@ -28,7 +28,7 @@ where
             .map(|ts| ts.data.clone())
             .unwrap_or_default();
 
-        let last_updated = match self.config.timefmt {
+        let last_updated = match self.weather_config.timefmt {
             TimeFmt::TwelveHr => weather_data
                 .properties
                 .meta
@@ -43,7 +43,7 @@ where
                 .to_string(),
         };
 
-        let pressure_units = match self.config.pressure_units {
+        let pressure_units = match self.weather_config.pressure_units {
             PressureUnits::Hectopascal => "hPa".to_string(),
             PressureUnits::Bar => "bar".to_string(),
             PressureUnits::Kilopascal => "kPa".to_string(),
@@ -52,24 +52,24 @@ where
             PressureUnits::Atmosphere => "atm".to_string(),
         };
 
-        let speed_units = match self.config.speed_units {
+        let speed_units = match self.weather_config.speed_units {
             SpeedUnits::MetersPerSecond => "m/s".to_string(),
             SpeedUnits::MilesPerHour => "mph".to_string(),
             SpeedUnits::KilometresPerHour => "km/h".to_string(),
         };
 
-        let column = widget::column()
+        let column = widget::column(vec![])
             .padding(spacing.space_xs)
             .spacing(spacing.space_xs)
             .push(
-                widget::row()
+                widget::row(vec![])
                     .spacing(spacing.space_m)
                     .push_maybe(data.next_1_hours.as_ref().map(|next_1_hours| {
                         let symbol = next_1_hours.summary.symbol_code.clone();
                         widget::icon(WeatherData::icon_handle(symbol)).size(150)
                     }))
                     .push(
-                        widget::column()
+                        widget::column(vec![])
                             .spacing(spacing.space_xs)
                             .push(
                                 location
@@ -147,7 +147,7 @@ where
     }
 
     fn calculate_pressure_units(&self, value: f64) -> f64 {
-        match self.config.pressure_units {
+        match self.weather_config.pressure_units {
             PressureUnits::Hectopascal => value,
             PressureUnits::Bar => value * 0.001_f64,
             PressureUnits::Kilopascal => value * 0.1_f64,
@@ -158,7 +158,7 @@ where
     }
 
     fn calculate_speed_units(&self, value: f64) -> f64 {
-        match self.config.speed_units {
+        match self.weather_config.speed_units {
             SpeedUnits::MetersPerSecond => value,
             SpeedUnits::MilesPerHour => value / 0.44704_f64,
             SpeedUnits::KilometresPerHour => value * 3.6,

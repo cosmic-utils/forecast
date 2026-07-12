@@ -1,10 +1,7 @@
-use config::{
-    AppError, AppTheme, PressureUnits, SpeedUnits, TimeFmt, WeatherConfigState, CONFIG_VERSION,
-};
+use config::{AppError, AppTheme, PressureUnits, SpeedUnits, TimeFmt, WeatherStateConfig};
 use cosmic::cosmic_config::Update;
 use cosmic::cosmic_theme::ThemeMode;
 use cosmic::iced::keyboard::{Key, Modifiers};
-//use cosmic::iced_core::Element;
 use cosmic::surface;
 use cosmic::widget::about::About;
 use cosmic::widget::menu::action::MenuAction;
@@ -14,9 +11,7 @@ use cosmic::{
     cosmic_config::{self, CosmicConfigEntry},
     cosmic_theme, executor,
     iced::{event, keyboard::Event as KeyEvent, window, Event, Length, Subscription},
-    theme, widget,
-    widget::{column, container, nav_bar, scrollable},
-    ApplicationExt, Apply, Element,
+    theme, widget, ApplicationExt, Apply, Element,
 };
 use serde::{Deserialize, Serialize};
 use std::any::TypeId;
@@ -27,7 +22,6 @@ pub mod icon_cache;
 pub mod key_bind;
 pub mod localize;
 pub mod menu;
-pub mod settings;
 
 use crate::app::config::{Units, WeatherConfig};
 use crate::app::icon_cache::icon_cache_get;
@@ -46,18 +40,19 @@ pub enum Message {
     ToggleContextPage(ContextPage),
     Key(Modifiers, Key),
     Modifiers(Modifiers),
-    Config(WeatherConfig),
+    UpdateWeatherConfigFromFilesystem(WeatherConfig),
+    UpdateWeatherStateConfigFromFilesystem(WeatherStateConfig),
+    DefaultPage(NavPage),
     Units(Units),
     TimeFmt(TimeFmt),
     PressureUnits(PressureUnits),
     SpeedUnits(SpeedUnits),
     AppTheme(AppTheme),
-    DefaultPage(NavPage),
     DialogComplete((String, String)),
     DialogCancel,
     UpdateLocations(Vec<Location>),
     SetLocation(Location),
-    SetWeatherData((WeatherConfigState, WeatherRequestStatus)),
+    SetWeatherData((WeatherStateConfig, WeatherRequestStatus)),
     ApiKeyUpdate(String),
     SaveApiKey,
     OpenWebsite(String),
@@ -68,10 +63,9 @@ pub enum Message {
 
 #[derive(Clone, Debug)]
 pub struct Flags {
-    pub config_handler: Option<cosmic_config::Config>,
-    pub config: WeatherConfig,
-    pub config_state: WeatherConfigState,
-    pub config_state_handler: Option<cosmic_config::Config>,
+    pub handler: cosmic_config::Config,
+    pub weather_config: WeatherConfig,
+    pub weather_state_config: WeatherStateConfig,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -152,15 +146,13 @@ impl NavPage {
 pub struct App {
     core: Core,
     about: About,
-    nav_model: nav_bar::Model,
+    nav_model: widget::nav_bar::Model,
     key_binds: HashMap<KeyBind, Action>,
     modifiers: Modifiers,
     context_page: ContextPage,
-    config_handler: Option<cosmic_config::Config>,
-    config_state_handler: Option<cosmic_config::Config>,
-    pub config: WeatherConfig,
-    pub config_state: WeatherConfigState,
-
+    handler: cosmic_config::Config,
+    pub weather_config: WeatherConfig,
+    pub weather_state_config: WeatherStateConfig,
     city: String,
     app_locations: Vec<Location>,
     units: Vec<String>,
@@ -189,7 +181,7 @@ impl cosmic::Application for App {
     }
 
     fn init(core: Core, flags: Self::Flags) -> (Self, Task<Self::Message>) {
-        let mut nav_model = nav_bar::Model::default();
+        let mut nav_model = widget::nav_bar::Model::default();
         for &nav_page in NavPage::all() {
             let id = nav_model
                 .insert()
@@ -197,7 +189,7 @@ impl cosmic::Application for App {
                 .text(nav_page.title())
                 .data::<NavPage>(nav_page)
                 .id();
-            if nav_page == flags.config.default_page {
+            if nav_page == flags.weather_config.default_page {
                 nav_model.activate(id);
             }
         }
@@ -243,9 +235,10 @@ impl cosmic::Application for App {
             key_binds: key_binds(),
             modifiers: Modifiers::empty(),
             context_page: ContextPage::Settings,
-            config_handler: flags.config_handler,
-            api_key: flags.config.api_key.clone(),
-            config: flags.config,
+            handler: flags.handler,
+            api_key: flags.weather_config.api_key.clone(),
+            weather_config: flags.weather_config,
+            weather_state_config: flags.weather_state_config,
             city: String::new(),
             app_locations: Vec::new(),
             units: app_units,
@@ -255,13 +248,11 @@ impl cosmic::Application for App {
             pages: app_pages,
             app_themes,
             dialog_pages: VecDeque::new(),
-            config_state: flags.config_state,
-            config_state_handler: flags.config_state_handler,
         };
 
         // Default location to user location if empty
         // Denver if not found
-        if app.config.location.is_none() {
+        if app.weather_config.location.is_none() {
             let command = Task::done(cosmic::action::Action::App(Message::DefaultCity));
 
             commands.push(command);
@@ -270,8 +261,8 @@ impl cosmic::Application for App {
         // Do not open nav bar by default
         app.core.nav_bar_set_toggled(false);
 
-        if app.config_state.expires.is_none()
-            || app.config_state.expires <= Some(chrono::offset::Utc::now().into())
+        if app.weather_state_config.expires.is_none()
+            || app.weather_state_config.expires <= Some(chrono::offset::Utc::now().into())
         {
             commands.push(app.update_weather_data());
         }
@@ -290,7 +281,7 @@ impl cosmic::Application for App {
         (app, Task::batch(commands))
     }
 
-    fn nav_model(&self) -> Option<&nav_bar::Model> {
+    fn nav_model(&self) -> Option<&widget::nav_bar::Model> {
         Some(&self.nav_model)
     }
 
@@ -304,7 +295,7 @@ impl cosmic::Application for App {
         Some(match self.context_page {
             ContextPage::About => cosmic::app::context_drawer::about(
                 &self.about,
-                Message::OpenWebsite,
+                |url| Message::OpenWebsite(url.to_string()),
                 Message::CloseContextPage,
             )
             .title(title),
@@ -342,7 +333,7 @@ impl cosmic::Application for App {
 
         let dialog = match dialog_page {
             DialogPage::ApiKey => {
-                let content = widget::column()
+                let content = widget::column(vec![])
                     .spacing(space_xxs)
                     .push(
                         widget::text_input(fl!("api-key"), self.api_key.as_str())
@@ -396,14 +387,13 @@ impl cosmic::Application for App {
         vec![menu::menu_bar(&self.core, &self.key_binds)]
     }
 
-    fn on_nav_select(&mut self, id: nav_bar::Id) -> Task<Message> {
+    fn on_nav_select(&mut self, id: widget::nav_bar::Id) -> Task<Message> {
         self.nav_model.activate(id);
 
         Task::none()
     }
 
     fn subscription(&self) -> Subscription<Self::Message> {
-        struct ConfigSubscription;
         struct ThemeSubscription;
 
         let subscriptions = vec![
@@ -417,21 +407,24 @@ impl cosmic::Application for App {
                 }
                 _ => None,
             }),
-            cosmic_config::config_subscription(
-                TypeId::of::<ConfigSubscription>(),
-                Self::APP_ID.into(),
-                CONFIG_VERSION,
-            )
-            .map(|update: Update<ThemeMode>| {
-                if !update.errors.is_empty() {
-                    log::info!(
-                        "errors loading config {:?}: {:?}",
-                        update.keys,
-                        update.errors
-                    );
-                }
-                Message::SystemThemeModeChange
-            }),
+            self.core()
+                .watch_config::<WeatherConfig>(Self::APP_ID)
+                .map(|update| {
+                    for why in update.errors {
+                        tracing::error!("app config error: {}", why);
+                    }
+
+                    Message::UpdateWeatherConfigFromFilesystem(update.config)
+                }),
+            self.core()
+                .watch_config::<WeatherStateConfig>(Self::APP_ID)
+                .map(|update| {
+                    for why in update.errors {
+                        tracing::error!("app config error: {}", why);
+                    }
+
+                    Message::UpdateWeatherStateConfigFromFilesystem(update.config)
+                }),
             cosmic_config::config_subscription::<_, cosmic_theme::ThemeMode>(
                 TypeId::of::<ThemeSubscription>(),
                 cosmic_theme::THEME_MODE_ID.into(),
@@ -439,7 +432,7 @@ impl cosmic::Application for App {
             )
             .map(|update: Update<ThemeMode>| {
                 if !update.errors.is_empty() {
-                    log::info!(
+                    tracing::info!(
                         "errors loading theme mode {:?}: {:?}",
                         update.keys,
                         update.errors
@@ -505,7 +498,7 @@ impl cosmic::Application for App {
             }
             Message::Key(modifiers, key) => {
                 for (key_bind, action) in self.key_binds.iter() {
-                    if key_bind.matches(modifiers, &key) {
+                    if key_bind.matches(modifiers, &key, None) {
                         return self.update(action.message());
                     }
                 }
@@ -513,36 +506,48 @@ impl cosmic::Application for App {
             Message::Modifiers(modifiers) => {
                 self.modifiers = modifiers;
             }
-            Message::Config(config) => {
-                if config != self.config {
-                    log::info!("Updating config");
-                    self.config = config;
+            Message::UpdateWeatherConfigFromFilesystem(config) => {
+                if config != self.weather_config {
+                    tracing::info!("Filesystem changes detected, updating config");
+                    self.weather_config = config;
+                }
+            }
+            Message::UpdateWeatherStateConfigFromFilesystem(weather_state_config) => {
+                if weather_state_config != self.weather_state_config {
+                    tracing::info!("Filesystem changes detected, updating weather state config");
+                    self.weather_state_config = weather_state_config;
                 }
             }
             Message::Units(units) => {
-                self.config.units = units;
-                commands.push(self.save_config());
+                if let Err(error) = self.weather_config.set_units(&self.handler, units) {
+                    tracing::error!("failed to set: {}", error);
+                }
             }
             Message::TimeFmt(timefmt) => {
-                self.config.timefmt = timefmt;
-                commands.push(self.save_config());
+                if let Err(error) = self.weather_config.set_timefmt(&self.handler, timefmt) {
+                    tracing::error!("failed to set: {}", error);
+                }
             }
             Message::PressureUnits(units) => {
-                self.config.pressure_units = units;
-                commands.push(self.save_config());
+                if let Err(error) = self.weather_config.set_pressure_units(&self.handler, units) {
+                    tracing::error!("failed to set: {}", error);
+                }
             }
             Message::SpeedUnits(speed) => {
-                self.config.speed_units = speed;
-                commands.push(self.save_config());
+                if let Err(error) = self.weather_config.set_speed_units(&self.handler, speed) {
+                    tracing::error!("failed to set: {}", error);
+                }
             }
             Message::AppTheme(theme) => {
-                self.config.app_theme = theme;
-                commands.push(self.save_config());
+                if let Err(error) = self.weather_config.set_app_theme(&self.handler, theme) {
+                    tracing::error!("failed to set: {}", error);
+                }
                 commands.push(self.save_theme());
             }
             Message::DefaultPage(page) => {
-                self.config.default_page = page;
-                commands.push(self.save_config());
+                if let Err(error) = self.weather_config.set_default_page(&self.handler, page) {
+                    tracing::error!("failed to set: {}", error);
+                }
             }
             Message::DialogComplete((city, key)) => {
                 let command =
@@ -554,7 +559,6 @@ impl cosmic::Application for App {
                     });
 
                 commands.push(command);
-                commands.push(self.save_config());
             }
             Message::DialogCancel => {
                 self.dialog_pages.pop_front();
@@ -563,10 +567,25 @@ impl cosmic::Application for App {
                 self.app_locations = locations;
             }
             Message::SetLocation(location) => {
-                self.config.location = Some(location.display_name.clone());
-                self.config.latitude = Some(location.lat.clone());
-                self.config.longitude = Some(location.lon.clone());
-                commands.push(self.save_config());
+                if let Err(error) = self
+                    .weather_config
+                    .set_location(&self.handler, Some(location.display_name.clone()))
+                {
+                    tracing::error!("failed to set: {}", error);
+                }
+
+                if let Err(error) = self
+                    .weather_config
+                    .set_latitude(&self.handler, Some(location.lat.clone()))
+                {
+                    tracing::error!("failed to set: {}", error);
+                }
+                if let Err(error) = self
+                    .weather_config
+                    .set_longitude(&self.handler, Some(location.lon.clone()))
+                {
+                    tracing::error!("failed to set: {}", error);
+                }
                 commands.push(self.update_weather_data());
 
                 self.core.window.show_context = !self.core.window.show_context;
@@ -574,11 +593,11 @@ impl cosmic::Application for App {
             Message::SetWeatherData((config_state, status)) => {
                 match status {
                     WeatherRequestStatus::NotModified => {
-                        self.config_state.expires = config_state.expires;
-                        self.config_state.last_request = config_state.last_request;
+                        self.weather_state_config.expires = config_state.expires;
+                        self.weather_state_config.last_request = config_state.last_request;
                     }
                     WeatherRequestStatus::Other => {
-                        self.config_state = config_state;
+                        self.weather_state_config = config_state;
                     }
                 }
 
@@ -588,8 +607,12 @@ impl cosmic::Application for App {
                 self.api_key = key;
             }
             Message::SaveApiKey => {
-                self.config.api_key = self.api_key.clone();
-                commands.push(self.save_config());
+                if let Err(error) = self
+                    .weather_config
+                    .set_api_key(&self.handler, self.api_key.clone())
+                {
+                    tracing::error!("failed to set: {}", error);
+                }
 
                 self.dialog_pages.pop_front();
             }
@@ -603,7 +626,6 @@ impl cosmic::Application for App {
             }
             Message::SystemThemeModeChange => {
                 commands.push(self.save_theme());
-                commands.push(self.save_config());
             }
             Message::CloseContextPage => {
                 self.core.window.show_context = !self.core.window.show_context;
@@ -626,16 +648,16 @@ impl cosmic::Application for App {
             None => cosmic::widget::text("Unkown page selected.").into(),
         };
 
-        column()
+        widget::column(vec![])
             .spacing(24)
-            .push(container(page_view).width(Length::Fill))
-            .apply(container)
+            .push(widget::container(page_view).width(Length::Fill))
+            .apply(widget::container)
             .width(Length::Fill)
             .max_width(1000)
-            .apply(container)
+            .apply(widget::container)
             .center_x(Length::Fill)
             .width(Length::Fill)
-            .apply(scrollable)
+            .apply(widget::scrollable)
             .into()
     }
 }
@@ -644,36 +666,24 @@ impl App
 where
     Self: cosmic::Application,
 {
-    fn save_config(&mut self) -> Task<Message> {
-        if let Some(ref config_handler) = self.config_handler {
-            if let Err(err) = self.config.write_entry(config_handler) {
-                log::error!("failed to save config: {}", err);
-            }
-        }
-
-        Task::none()
-    }
-
     fn save_config_state(&mut self) -> Task<Message> {
-        if let Some(ref config_state_handler) = self.config_state_handler {
-            if let Err(err) = self.config_state.write_entry(config_state_handler) {
-                log::error!("failed to save config: {}", err);
-            }
+        if let Err(err) = self.weather_state_config.write_entry(&self.handler) {
+            eprintln!("failed to save config: {}", err);
         }
 
         Task::none()
     }
 
     fn save_theme(&self) -> Task<Message> {
-        cosmic::command::set_theme(self.config.app_theme.theme())
+        cosmic::command::set_theme(self.weather_config.app_theme.theme())
     }
 
     fn update_weather_data(&self) -> Task<Message> {
-        let last_request = self.config_state.last_request.map(|lr| lr.to_utc());
+        let last_request = self.weather_state_config.last_request.map(|lr| lr.to_utc());
 
         let (Some(lat), Some(long)) = (
-            self.config.latitude.as_ref(),
-            self.config.longitude.as_ref(),
+            self.weather_config.latitude.as_ref(),
+            self.weather_config.longitude.as_ref(),
         ) else {
             return Task::none();
         };
@@ -702,17 +712,17 @@ where
     }
 
     fn settings(&self) -> Element<'_, Message> {
-        let selected_units = match self.config.units {
+        let selected_units = match self.weather_config.units {
             Units::Fahrenheit => 0,
             Units::Celsius => 1,
         };
 
-        let selected_timefmt = match self.config.timefmt {
+        let selected_timefmt = match self.weather_config.timefmt {
             TimeFmt::TwelveHr => 0,
             TimeFmt::TwentyFourHr => 1,
         };
 
-        let selected_pressure_units = match self.config.pressure_units {
+        let selected_pressure_units = match self.weather_config.pressure_units {
             PressureUnits::Hectopascal => 0,
             PressureUnits::Bar => 1,
             PressureUnits::Kilopascal => 2,
@@ -721,19 +731,19 @@ where
             PressureUnits::Atmosphere => 5,
         };
 
-        let selected_speed_units = match self.config.speed_units {
+        let selected_speed_units = match self.weather_config.speed_units {
             SpeedUnits::MetersPerSecond => 0,
             SpeedUnits::MilesPerHour => 1,
             SpeedUnits::KilometresPerHour => 2,
         };
 
-        let selected_theme = match self.config.app_theme {
+        let selected_theme = match self.weather_config.app_theme {
             config::AppTheme::Light => 0,
             config::AppTheme::Dark => 1,
             config::AppTheme::System => 2,
         };
 
-        let selected_page = match self.config.default_page {
+        let selected_page = match self.weather_config.default_page {
             NavPage::HourlyView => 0,
             NavPage::DailyView => 1,
             NavPage::Details => 2,
@@ -836,7 +846,7 @@ where
     fn changecity(&self) -> Element<'_, Message> {
         let cosmic_theme::Spacing { space_xxs, .. } = theme::active().cosmic().spacing;
 
-        let mut content = widget::column().spacing(space_xxs);
+        let mut content = widget::column(vec![]).spacing(space_xxs);
 
         content = content.push(
             widget::settings::section().add(
