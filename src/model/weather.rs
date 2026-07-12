@@ -2,7 +2,7 @@ use chrono::{DateTime, Local};
 use cosmic::widget::{self};
 use serde::{Deserialize, Serialize};
 
-use crate::app::{config::WeatherConfigState, icon_cache::WEATHER_ICONS};
+use crate::app::{config::WeatherStateConfig, icon_cache::WEATHER_ICONS};
 
 #[derive(Clone, Debug, Default, Deserialize, Serialize, PartialEq)]
 pub struct Geometry {
@@ -100,7 +100,7 @@ impl WeatherData {
     pub async fn get_weather_data(
         coords: (f64, f64),
         last_request: Option<chrono::DateTime<chrono::Utc>>,
-    ) -> Result<Option<(WeatherConfigState, WeatherRequestStatus)>, reqwest::Error> {
+    ) -> Result<Option<(WeatherStateConfig, WeatherRequestStatus)>, reqwest::Error> {
         let mut status = WeatherRequestStatus::Other;
         let query_params = [("lat", coords.0), ("lon", coords.1)];
 
@@ -140,12 +140,12 @@ impl WeatherData {
             Some(weather_ans)
         };
 
-        let weather_config_state = WeatherConfigState {
+        let weather_state_config = WeatherStateConfig {
             last_request: Some(last_request),
             expires,
             weather_data: weather_ans,
         };
-        Ok(Some((weather_config_state, status)))
+        Ok(Some((weather_state_config, status)))
     }
 
     pub fn icon_handle(symbol: String) -> widget::icon::Handle {

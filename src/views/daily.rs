@@ -1,8 +1,8 @@
 use chrono::DateTime;
 use chrono::Local;
+use cosmic::iced::widget::scrollable::Direction;
+use cosmic::iced::widget::scrollable::Scrollbar;
 use cosmic::iced::Alignment;
-use cosmic::iced_widget::scrollable::Direction;
-use cosmic::iced_widget::scrollable::Scrollbar;
 use cosmic::widget;
 use cosmic::Element;
 
@@ -19,9 +19,9 @@ where
 {
     pub fn view_daily_forecast(&self) -> Element<'_, Message> {
         let current_time = Local::now();
-        let location = self.config.location.clone();
+        let location = self.weather_config.location.clone();
         let spacing = cosmic::theme::active().cosmic().spacing;
-        let Some(weather_data) = &self.config_state.weather_data else {
+        let Some(weather_data) = &self.weather_state_config.weather_data else {
             return cosmic::widget::text(fl!("no_weather_data")).into();
         };
         let data = weather_data
@@ -32,7 +32,7 @@ where
             .map(|ts| ts.data.clone())
             .unwrap_or_default();
 
-        let last_updated = match self.config.timefmt {
+        let last_updated = match self.weather_config.timefmt {
             TimeFmt::TwelveHr => weather_data
                 .properties
                 .meta
@@ -61,7 +61,7 @@ where
                     None => &Details::default(),
                 };
 
-                widget::column()
+                widget::column(vec![])
                     .align_x(Alignment::Center)
                     .padding(spacing.space_xs)
                     .spacing(spacing.space_xs)
@@ -83,18 +83,18 @@ where
             })
             .collect();
 
-        let column = widget::column()
+        let column = widget::column(vec![])
             .padding(spacing.space_xs)
             .spacing(spacing.space_xs)
             .push(
-                widget::row()
+                widget::row(vec![])
                     .spacing(spacing.space_m)
                     .push_maybe(data.next_1_hours.as_ref().map(|next_1_hours| {
                         let symbol = next_1_hours.summary.symbol_code.clone();
                         widget::icon(WeatherData::icon_handle(symbol)).size(150)
                     }))
                     .push(
-                        widget::column()
+                        widget::column(vec![])
                             .spacing(spacing.space_xs)
                             .push(
                                 location
