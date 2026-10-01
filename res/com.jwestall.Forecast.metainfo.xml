@@ -23,12 +23,12 @@
   <summary>View weather predictions</summary>
   <summary xml:lang="cs">Podívejte se na předpověď počasí</summary>
   <summary xml:lang="hu">Időjárás-előrejelzések megtekintése</summary>
-  <summary xml:lang="cs">Zobacz prognozę pogody</summary>
+  <summary xml:lang="pl">Zobacz prognozę pogody</summary>
   <description>
     <p>Find out what the weather is going to be like with this simple weather application for the COSMIC™ Desktop.</p>
     <p xml:lang="cs">Zjistěte jaké bude počasí s touto jednoduchou aplikací pro prostředí COSMIC™.</p>
     <p xml:lang="hu">Tudd meg, milyen idő várható ezzel az egyszerű időjárás-alkalmazással a COSMIC™ asztali környezethez.</p>
-    <p xml:lang="cs">Zobacz jaka będzie pogoda przy pomocy tej przyjemnej aplikacji napisanej dla środowiska COSMIC™.</p>
+    <p xml:lang="pl">Zobacz jaka będzie pogoda przy pomocy tej przyjemnej aplikacji napisanej dla środowiska COSMIC™.</p>
   </description>
   <launchable type="desktop-id">com.jwestall.Forecast.desktop</launchable>
   <icon type="remote" height="256" width="256">https://raw.githubusercontent.com/cosmic-utils/forecast/main/res/icons/hicolor/scalable/apps/com.jwestall.Forecast.svg</icon>
